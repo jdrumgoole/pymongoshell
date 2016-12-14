@@ -8,6 +8,12 @@ from datetime import datetime
 class Agg(object):
     '''
     A wrapper class for the MongoDB Aggregation framework (MongoDB 3.2)
+    Give it a collection and it allows you to easily accumlate 
+    a pipeline before executing it with aggregate.
+    
+    Has a bunch of convenience functions that help with the boilerplate
+    and some basic error checking.
+    
     '''
 
     def __init__(self, collection ):
@@ -18,6 +24,7 @@ class Agg(object):
         self._hasDollarOut = False
         self._cursor       = None
         self._elapsed      = None
+        self._output       = None
         self.clear()
     
     @staticmethod
@@ -117,6 +124,7 @@ class Agg(object):
         if self._hasDollarOut :
             raise ValueError( "Aggregation already has $out defined: %s" % self._agg )
         else:
+            self._output = output
             self._agg.append( Agg.out( output ))
             self._hasDollarOut = True
             
@@ -127,6 +135,7 @@ class Agg(object):
         self._hasDollarOut = False
         self._elapsed = 0
         self._cursor = None
+        self._output = None
         
             
         return self
