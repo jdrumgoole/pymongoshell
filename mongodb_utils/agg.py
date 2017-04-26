@@ -5,14 +5,13 @@
 import pprint
 from datetime import datetime
 from collections import OrderedDict
-import collections
-from mugalyser.nested_dict import Nested_Dict
+from mongodb_utils.nested_dict import Nested_Dict
 import pymongo
 import csv
 import contextlib
 import sys
-from pydoc import doc
-        
+import pprint
+import json
 class Sorter( object ):
     '''
     Required for ordered sorting of fields as python dictionaries do not 
@@ -67,12 +66,16 @@ class CursorFormatter( object ):
     If root is a file name output the content to that file.
     '''
         
-    def __init__(self, cursor, filename="", format="json",  results=[] ):
+    def __init__(self, agg, filename="", format="json",  results=[] ):
         '''
         Data from cursor
         output to <filename>suffix.ext.
         '''
-        self._cursor = cursor
+        
+        if not isinstance( agg, Agg ):
+            raise ValueError( "aggregate argument to CursorFormatter is not of class Agg")
+        
+        self._agg = agg
         self._format = format
         self._filename = filename
         self._results = results
@@ -207,14 +210,17 @@ class CursorFormatter( object ):
             
         return count 
     
-    def output(self, fieldNames=None, datemap=None, time_format=None ):
+    def output(self, fieldNames=None, datemap=None, time_format=None, aggregate=True ):
         '''
         Output all fields using the fieldNames list. for fields in the list datemap indicates the field must
         be date
         '''
         if self._filename != "-" : 
             print( "Writing to '%s'" % self._filename )
-        count = self.printCursor( self._cursor, fieldNames, datemap, time_format )
+        
+        if aggregate :
+            print( self._agg )
+        count = self.printCursor( self._agg.aggregate(), fieldNames, datemap, time_format )
         print( "Wrote %i records" % count )
         
 class Agg(object):
@@ -222,14 +228,15 @@ class Agg(object):
     A wrapper class for the MongoDB Aggregation framework (MongoDB 3.2)
     '''
 
-    def __init__(self, collection ):
+    def __init__(self, collection, formatter="json" ):
         '''
-        Constructor
+        Constructor json or python for format.
         '''
         self._collection   = collection
         self._hasDollarOut = False
         self._cursor       = None
         self._elapsed      = None
+        self._formatter = formatter
         self.clear()
     
     @staticmethod
@@ -362,12 +369,37 @@ class Agg(object):
         return self
     
     def echo(self):
-        pprint.pprint( self._agg )
-        print( "" )
+        print( self._agg )
         return self
     
+    def formatter(self, output="json"):
+        
+        if output == "json" :
+            return self.json_format()
+        elif output == "python" :
+            return self.python_format()
+        else:
+            raise ValueError( "bad parmeter : output : %s" %  output )
+    
+    def json_format(self):
+        agg = "db." + self._collection.name + ".aggregate( [\n"
+        for i in self._agg :
+            #            agg = agg + pprint.pformat( i ) + ",\n"
+            agg = agg + json.dumps( i ) + ",\n"
+        return agg + '])\n'
+    
+    def python_format(self):
+        agg = "db." + self._collection.name + ".aggregate( [\n"
+        for i in self._agg :
+            agg = agg + pprint.pformat( i ) + ",\n"
+        return agg + '])\n'
+        
+    def __repr__(self):
+        
+        return self.formatter( self._formatter )
+    
     def __str__(self):
-        return pprint.pformat( self.__repr__())
+        return self.__repr__()
     
     def addRangeMatch( self, date_field, start=None, end=None ):
     
@@ -392,8 +424,7 @@ class Agg(object):
     def ifNull( null_value, non_null_value ):
         return { "$ifNull" : [ null_value, non_null_value ] }
     
-    def __repr__(self):
-        return "%s" % self._agg
+
     
     def cursor(self):
         return self._cursor 
