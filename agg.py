@@ -386,6 +386,10 @@ class Agg(object):
     def cond( boolean_expr, thenClause, elseClause ):  #$cond: { if: { $gte: [ "$qty", 250 ] }, then: 30, else: 20 }
         return { "$cond" : { "if" : boolean_expr, "then" : thenClause, "else" :  elseClause }}
     
+    @staticmethod
+    def exists( field_name, is_present = True ):
+        return { field_name : { "$exists" : is_present }}
+    
     def __repr__(self):
         return "%s" % self._agg
     
