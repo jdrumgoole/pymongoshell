@@ -5,13 +5,12 @@
 import pprint
 from datetime import datetime
 from collections import OrderedDict
-import collections
-from mugalyser.nested_dict import nested_dict
+
+from mongodb_utils.nested_dict import Nested_Dict
 import pymongo
 import csv
 import contextlib
 import sys
-from pydoc import doc
         
 class Sorter( object ):
     '''
@@ -101,7 +100,7 @@ class CursorFormatter( object ):
         Given a field that contains a datetime 
         '''
         
-        d = nested_dict( doc )
+        d = Nested_Dict( doc )
         value = d.get_value(  field )
         if isinstance( value, datetime ):
             d.set_value( field, value.strftime( time_format ) )
@@ -120,8 +119,8 @@ class CursorFormatter( object ):
         if fields is None or len( fields ) == 0 :
             return doc
         
-        newDoc = nested_dict( {} )
-        oldDoc = nested_dict( doc )
+        newDoc = Nested_Dict( {} )
+        oldDoc = Nested_Dict( doc )
 
         
         for i in fields:
