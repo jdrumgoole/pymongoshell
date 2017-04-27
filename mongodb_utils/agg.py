@@ -1,6 +1,10 @@
 '''
 
 @author: jdrumgoole
+
+Helper class to make construction of aggregation pipelines in MongoDB
+easier.
+
 '''
 import pprint
 from datetime import datetime

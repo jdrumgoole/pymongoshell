@@ -1,3 +1,4 @@
+
 '''
 Created on 30 Sep 2016
 
@@ -8,18 +9,15 @@ import os
 
 pyfiles = [ f for f in os.listdir( "." ) if f.endswith( ".py" ) ]
 
-def readme():
-    with open('README.md') as f:
-        return f.read()
     
 setup(
     name = "mongodb_utils",
-    version = "0.1",
+    version = "0.5",
     
     author = "Joe Drumgoole",
     author_email = "joe@joedrumgoole.com",
     description = "MongoDB Utils - A package of utilities for use with MongoDB",
-    long_description = readme(),
+    long_description = "A package with two utilities MongoDB for connection and Agg.py for aggregation",
     license = "AGPL",
     keywords = "Meetup MUGS MongoDB API",
     url = "https://github.com/jdrumgoole/MUGAlyser",
