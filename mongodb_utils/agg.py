@@ -11,7 +11,6 @@ import pymongo
 import csv
 import contextlib
 import sys
-import pprint
 import json
 class Sorter( object ):
     '''
@@ -67,7 +66,7 @@ class CursorFormatter( object ):
     If root is a file name output the content to that file.
     '''
         
-    def __init__(self, agg, filename="", format="json",  results=[] ):
+    def __init__(self, agg, filename="", formatter="json",  results=[] ):
         '''
         Data from cursor
         output to <filename>suffix.ext.
@@ -77,7 +76,7 @@ class CursorFormatter( object ):
             raise ValueError( "aggregate argument to CursorFormatter is not of class Agg")
         
         self._agg = agg
-        self._format = format
+        self._format = formatter
         self._filename = filename
         self._results = results
         
@@ -211,7 +210,7 @@ class CursorFormatter( object ):
             
         return count 
     
-    def output(self, fieldNames=None, datemap=None, time_format=None, aggregate=True ):
+    def output(self, fieldNames=None, datemap=None, time_format=None, aggregate=True, limit=None ):
         '''
         Output all fields using the fieldNames list. for fields in the list datemap indicates the field must
         be date
@@ -219,6 +218,8 @@ class CursorFormatter( object ):
         if self._filename != "-" : 
             print( "Writing to '%s'" % self._filename )
         
+        if limit :
+            self._agg.addLimit( limit )
         if aggregate :
             print( self._agg )
         count = self.printCursor( self._agg.aggregate(), fieldNames, datemap, time_format )
@@ -381,18 +382,34 @@ class Agg(object):
             return self.python_format()
         else:
             raise ValueError( "bad parmeter : output : %s" %  output )
-    
+    @staticmethod
+    def json_serial(obj):
+        """JSON serializer for objects not serializable by default json code"""
+
+        if isinstance(obj, datetime):
+            serial = "ISODate( " + obj.isoformat() + " )" 
+            return serial
+        raise TypeError ("Type not serializable")
+
     def json_format(self):
-        agg = "db." + self._collection.name + ".aggregate( [\n"
+        agg = "db." + self._collection.name + ".aggregate([\n"
         for i in self._agg :
-            #            agg = agg + pprint.pformat( i ) + ",\n"
-            agg = agg + json.dumps( i ) + ",\n"
+            #            agg = agg + pprint.pformat( i ) + ",\n" 
+            agg = agg + json.dumps( i, default=Agg.json_serial ) + ",\n"
+       
+        if agg.endswith( ",\n"):
+            agg = agg[:-2]
+            
         return agg + '])\n'
     
     def python_format(self):
         agg = "db." + self._collection.name + ".aggregate( [\n"
         for i in self._agg :
             agg = agg + pprint.pformat( i ) + ",\n"
+            
+        if agg.endswith( ",\n"):
+            agg = agg[:-2]
+            
         return agg + '])\n'
         
     def __repr__(self):
