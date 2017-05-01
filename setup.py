@@ -18,7 +18,7 @@ setup(
     
     author = "Joe Drumgoole",
     author_email = "joe@joedrumgoole.com",
-    description = "MongoDB Utils",
+    description = "MongoDB Utils - A package of utilities for use with MongoDB",
     long_description = readme(),
     license = "AGPL",
     keywords = "Meetup MUGS MongoDB API",
