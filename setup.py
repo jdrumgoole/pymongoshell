@@ -8,21 +8,21 @@ import os
 
 pyfiles = [ f for f in os.listdir( "." ) if f.endswith( ".py" ) ]
 
-def readme():
-    with open('README.md') as f:
-        return f.read()
     
 setup(
     name = "mongodb_utils",
-    version = "0.1",
+    version = "0.9.1",
     
     author = "Joe Drumgoole",
     author_email = "joe@joedrumgoole.com",
     description = "MongoDB Utils - A package of utilities for use with MongoDB",
-    long_description = readme(),
+    long_description = '''
+A simple class for initiating MongoDB connections and an aggregation convenience
+class agg.py that helps in building aggregation pipelines".
+''',
     license = "AGPL",
-    keywords = "Meetup MUGS MongoDB API",
-    url = "https://github.com/jdrumgoole/MUGAlyser",
+    keywords = "MongoDB API Aggregation",
+    url = "https://github.com/jdrumgoole/mongodb_utils",
     
     classifiers=[
         # How mature is this project? Common values are

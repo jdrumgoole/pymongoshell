@@ -33,7 +33,7 @@ class MUGAlyserMongoDB( object ):
         self._uri_dict = pymongo.uri_parser.parse_uri( self._uri )
         
         if not "database" in self._uri_dict :
-            self._url_dict[ 'database' ] = default_database
+            self._uri_dict[ 'database' ] = default_database
             
         if not "collection" in self._uri_dict :
             self._uri_dict[ 'collection' ] = default_collection
