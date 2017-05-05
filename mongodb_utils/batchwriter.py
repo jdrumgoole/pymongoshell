@@ -5,46 +5,31 @@ Created on 12 Oct 2016
 '''
 
 import pymongo
-from generator_utils import coroutine
+import bson
 
-class DocEmbed( object ):
-    
-    def __init__(self, outerFieldName ):
-        self._outerFieldName = outerFieldName
-        
-    def __call__(self, doc ):
+from mongodb_utils.generator_utils import coroutine
 
-        newDoc = {}
-        newDoc[ self._outerFieldName ] = doc
+def no_op( new_name, d ) :
+    _ = new_name
+    return d
 
-        return newDoc
-        
-class DocTransform( object ):
-    
-    def noop(self, doc ):
-        return doc
-    
-    def __init__(self, xformFunc = None ):
-        if xformFunc is None :
-            self._xformFunc = self.noop
-        else:
-            self._xformFunc = xformFunc
-            
-    def __call__(self, doc ):
-        return self._xformFunc( doc )
-    
 class BatchWriter(object):
      
-    def __init__(self, collection, transform=None, orderedWrites=False ):
+    def __init__(self, collection, transformFunc=None, newDocName=None, orderedWrites=False ):
          
         self._collection = collection
         self._orderedWrites = orderedWrites
-        if transform is None:
-            self._transform = DocTransform()
-        elif type( transform ) is not DocTransform :
-            raise ValueError( "transform parameter to BatchWriter is not type: %s" % type( transform ))
+        if transformFunc is None:
+            self._processFunc = no_op
         else:
-            self._transform = transform
+            self._processFunc = transformFunc
+            
+        if newDocName is None:
+            self._newDocName = ""
+        else:
+            self._newDocName = newDocName
+         
+
 
     '''
     Intialise coroutine automatically
@@ -58,23 +43,17 @@ class BatchWriter(object):
             else:
                 bulker = self._collection.initialize_unordered_bulk_op()
                 
-            results = None
-            
             bulkerCount = 0
             
             try :
                 while True:
+                    doc = (yield)
                     
-                    doc = ( yield results )
-                    
-                    if results:
-                        results = None
-                        
-                    
-                    bulker.insert( self._transform(  doc  ))
+                    #pprint.pprint( doc )) 
+                    bulker.insert( self._processFunc(  self._newDocName, doc  ))
                     bulkerCount = bulkerCount + 1 
                     if ( bulkerCount == writeLimit ):
-                        results = bulker.execute()
+                        bulker.execute()
                         if self._orderedWrites :
                             bulker = self._collection.initialize_ordered_bulk_op()
                         else:
@@ -84,6 +63,13 @@ class BatchWriter(object):
             except GeneratorExit :
                 if ( bulkerCount > 0 ) :
                     bulker.execute() 
+            except bson.errors.InvalidDocument as e:
+                print( "Invalid Document" )
+                print( "bson.errors.InvalidDocument: %s" % e )
+
+                raise
         except pymongo.errors.BulkWriteError as e :
             print( "Bulk write error : %s" % e.details )
             raise
+        
+

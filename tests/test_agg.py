@@ -6,38 +6,41 @@ Created on 21 Mar 2017
 import os
 import unittest
 import datetime
+import pprint
 
 from mongodb_utils.agg import Agg, CursorFormatter
 from mongodb_utils.nested_dict import Nested_Dict
-from mongodb_utils.mongodb import MUGAlyserMongoDB
+from mongodb_utils.mongodb import MongoDB
 
 class Test(unittest.TestCase):
 
 
     def setUp(self):
-        self._mdb = MUGAlyserMongoDB()
-        self._agg = Agg( self._mdb.membersCollection())
+        self._mdb = MongoDB( uri="mongodb://localhost:27017/MUGS" )
+        self._agg = Agg( self._mdb.database()[ "members"])
         
     def tearDown(self): 
         pass
 
     def testFormatter(self):
-        self._agg.addMatch( { "member.member_name" : "Joe Drumgoole"})
+        self._agg.addMatch( { "batchID" : 47, "member.name" : "Joe Drumgoole" })
         #print( "agg: %s" % self._agg )
-        self._agg.addProject( { "member.member_name" : 1,
+        self._agg.addProject( { "member.name" : 1,
                                 "_id" : 0,
-                                "member.join_time" : 1,
+                                "member.joined" : 1,
                                 "member.city" : 1,
                              })
-        cursor = self._agg.aggregate()
         prefix="agg_test_"
         filename="JoeDrumgoole"
         ext = "json"
-        self._formatter = CursorFormatter( cursor, prefix=prefix, name=filename, ext=ext)
-        self._formatter.output( fieldNames=[ "member.member_name", "member.join_time", "member.city"], datemap=[ "member.join_time"] )
-        self.assertTrue( os.path.isfile( prefix + filename + "." + ext ))
-        os.unlink( prefix + filename + "." + ext )
+        self._formatter = CursorFormatter( self._agg, filename=filename, formatter=ext)
+        self._formatter.output( fieldNames=[ "member.name", "member.joined", "member.city"], datemap=[ "member.joined"] )
+        self.assertTrue( os.path.isfile( filename ))
+        os.unlink( filename )
         
+    def test_create_view(self):
+        pass
+    
     def testFieldMapper(self):
         
         doc = { "a" : "b"}
@@ -98,16 +101,6 @@ class Test(unittest.TestCase):
         self.assertTrue( newdoc['g'].has_key( "j"))
         self.assertFalse( newdoc['g'].has_key( "h"))
         
-    def testNestedDict(self):
-        d = Nested_Dict( {})
-        self.assertFalse( d.has_key( "hello"))
-        d.set_value( "hello", "world")
-        self.assertTrue( d.has_key( "hello"))
-        self.assertEqual( d.get_value( "hello" ), "world" )
-        self.assertRaises( KeyError, d.get_value, "Bingo" )
-        
-        d.set_value( "member.name", "Joe Drumgoole")
-        self.assertEqual( d.get_value( "member"), { "name" : "Joe Drumgoole" })
         
     def test_dateMapField(self):
         

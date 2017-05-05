@@ -66,19 +66,26 @@ class CursorFormatter( object ):
     If root is a file name output the content to that file.
     '''
         
-    def __init__(self, agg, filename="", formatter="json",  results=[] ):
+    def __init__(self, agg, filename="", formatter="json",  results=None):
         '''
         Data from cursor
         output to <filename>suffix.ext.
         '''
         
-        if not isinstance( agg, Agg ):
-            raise ValueError( "aggregate argument to CursorFormatter is not of class Agg")
+        if ( isinstance( agg, pymongo.cursor.Cursor ) or 
+             isinstance( agg, pymongo.command_cursor.CommandCursor ) or 
+             isinstance( agg, Agg )):
+            self._agg = agg
+        else:
+            raise ValueError( "aggregate argument to CursorFormatter is not of class Agg or cursor")
         
         self._agg = agg
         self._format = formatter
         self._filename = filename
-        self._results = results
+        if results is None:
+            self._results = []
+        else:
+            self._results = results
         
     def results(self):
         return self._results 
@@ -111,7 +118,7 @@ class CursorFormatter( object ):
         if isinstance( value, datetime ):
             d.set_value( field, value.strftime( time_format ) )
         else:
-            raise ValueError( "Field '%s' is not a datetime field")
+            raise ValueError( "Field '%s' is not a datetime field" % field )
 
         return d.dict_value()
        
@@ -146,7 +153,7 @@ class CursorFormatter( object ):
         '''
         if datemap:
             for i in datemap :
-                CursorFormatter.dateMapField( doc, i, time_format=None )
+                CursorFormatter.dateMapField( doc, i, time_format=time_format )
         return doc
                 
     def printCSVCursor( self, c, fieldnames, datemap, time_format=None):
@@ -191,7 +198,7 @@ class CursorFormatter( object ):
                 self._results.append( i )
                 d = CursorFormatter.fieldMapper( i, fieldnames )
                 #print( "processing fieldmapper: %s" % d )
-                CursorFormatter.dateMapper( d, datemap )
+                CursorFormatter.dateMapper( d, datemap, time_format )
                 pprint.pprint( d, output )
                 count = count + 1
 
@@ -215,14 +222,20 @@ class CursorFormatter( object ):
         Output all fields using the fieldNames list. for fields in the list datemap indicates the field must
         be date
         '''
+        
+        cursor = None
         if self._filename != "-" : 
             print( "Writing to '%s'" % self._filename )
         
-        if limit :
-            self._agg.addLimit( limit )
-        if aggregate :
-            print( self._agg )
-        count = self.printCursor( self._agg.aggregate(), fieldNames, datemap, time_format )
+        if isinstance( self._agg, Agg ):
+            if limit :
+                self._agg.addLimit( limit )
+            if aggregate :
+                print( self._agg )
+            cursor = self._agg.aggregate()
+        else:
+            cursor = self._agg
+        count = self.printCursor( cursor, fieldNames, datemap, time_format )
         print( "Wrote %i records" % count )
         
 class Agg(object):
@@ -240,6 +253,7 @@ class Agg(object):
         self._elapsed      = None
         self._formatter = formatter
         self.clear()
+        self._agg = []
     
     @staticmethod
     def __limit( size ):
@@ -382,6 +396,7 @@ class Agg(object):
             return self.python_format()
         else:
             raise ValueError( "bad parmeter : output : %s" %  output )
+        
     @staticmethod
     def json_serial(obj):
         """JSON serializer for objects not serializable by default json code"""
@@ -442,8 +457,6 @@ class Agg(object):
     def ifNull( null_value, non_null_value ):
         return { "$ifNull" : [ null_value, non_null_value ] }
     
-
-    
     def cursor(self):
         return self._cursor 
     
@@ -464,6 +477,17 @@ class Agg(object):
         
         return self.aggregate()
 
+    def create_view(self, database, view_name, collation=None  ):
+        
+        if collation is None:
+            return database.command( { "view" : view_name, 
+                                       "viewOn" : self._collection.name,
+                                       "pipeline" : self._agg } )
+        else:
+            return database.command( { "view" : view_name, 
+                                       "viewOn" : self._collection.name,
+                                       "pipeline" : self._agg, 
+                                       "collation" : collation } )
     def tee(self, output ):
         '''
         Iterator over the aggregator and produce a copy in output

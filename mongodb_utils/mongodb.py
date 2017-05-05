@@ -6,12 +6,12 @@ Created on 22 Jun 2016
 
 import pymongo
 
-class MUGAlyserMongoDB( object ):
+class MongoDB( object ):
     
     def __init__(self, uri="mongodb://localhost:27017/",
-                 default_port = 20717,
-                 default_database = "test",
-                 default_collection = "test" ):      
+                         default_port = 20717,
+                         default_database = "test",
+                         default_collection = "test" ):      
         '''
         Example URL 
         
@@ -24,13 +24,14 @@ class MUGAlyserMongoDB( object ):
         '''
         
         self._client = pymongo.MongoClient( uri )
-        self._uri = pymongo.uri_parser.parse_uri( uri )
+        self._uri_dict = pymongo.uri_parser.parse_uri( uri )
         
         if self._client.get_default_database() is None :
             self._database = self._client[ default_database ]
+        else:
+            self._database = self._client.get_default_database()
             
         self._collection = self._database[ default_collection ]
-        self._uri_dict = pymongo.uri_parser.parse_uri( self._uri )
         
         if not "database" in self._uri_dict :
             self._uri_dict[ 'database' ] = default_database
@@ -39,13 +40,13 @@ class MUGAlyserMongoDB( object ):
             self._uri_dict[ 'collection' ] = default_collection
         
     def uri_info(self):
-        return self._uri
+        return self._uri_dict
     
     def client(self):
         return self._client
     
     def database(self):
-        self._uri_dict[ 'database']
+        return self._database
         
     def collection(self):
         self._uri_dict[ 'collection' ]

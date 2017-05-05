@@ -11,7 +11,7 @@ pyfiles = [ f for f in os.listdir( "." ) if f.endswith( ".py" ) ]
     
 setup(
     name = "mongodb_utils",
-    version = "0.9.1",
+    version = "0.9.2",
     
     author = "Joe Drumgoole",
     author_email = "joe@joedrumgoole.com",
@@ -46,7 +46,7 @@ class agg.py that helps in building aggregation pipelines".
        
     packages = [ "mongodb_utils"],
     
-    scripts  = [],
+
 
     test_suite='nose.collector',
     tests_require=['nose'],
