@@ -8,10 +8,17 @@ import pymongo
 
 class MongoDB( object ):
     
+<<<<<<< HEAD
     def __init__(self, uri="mongodb://localhost:27017/test",
                  default_port = 20717,
                  default_database = "test",
                  default_collection = "test" ):      
+=======
+    def __init__(self, uri="mongodb://localhost:27017/",
+                         default_port = 20717,
+                         default_database = "test",
+                         default_collection = "test" ):      
+>>>>>>> f35ff0c71b32bd3c38d46d7f45aa810b7b2efc4f
         '''
         Example URL 
         
@@ -24,7 +31,7 @@ class MongoDB( object ):
         '''
         
         self._client = pymongo.MongoClient( uri )
-        self._uri = pymongo.uri_parser.parse_uri( uri )
+        self._uri_dict = pymongo.uri_parser.parse_uri( uri )
         
         if self._client.get_default_database() is None :
             self._database = self._client[ default_database ]
@@ -33,14 +40,19 @@ class MongoDB( object ):
             
         self._collection = self._database[ default_collection ]
         
+<<<<<<< HEAD
         if not "database" in self._uri :
             self._url_dict[ 'database' ] = default_database
+=======
+        if not "database" in self._uri_dict :
+            self._uri_dict[ 'database' ] = default_database
+>>>>>>> f35ff0c71b32bd3c38d46d7f45aa810b7b2efc4f
             
         if not "collection" in self._uri :
             self._uri_dict[ 'collection' ] = default_collection
         
     def uri_info(self):
-        return self._uri
+        return self._uri_dict
     
     def client(self):
         return self._client
