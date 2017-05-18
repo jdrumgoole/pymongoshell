@@ -5,7 +5,7 @@ Created on 14 Dec 2016
 '''
 import unittest
 
-from batchwriter import DocTransform
+from mongodb_utils.batchwriter import DocTransform
 class Test(unittest.TestCase):
 
 

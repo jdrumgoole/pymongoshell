@@ -6,9 +6,9 @@ Created on 22 Jun 2016
 
 import pymongo
 
-class MUGAlyserMongoDB( object ):
+class MongoDB( object ):
     
-    def __init__(self, uri="mongodb://localhost:27017/",
+    def __init__(self, uri="mongodb://localhost:27017/test",
                  default_port = 20717,
                  default_database = "test",
                  default_collection = "test" ):      
@@ -28,14 +28,15 @@ class MUGAlyserMongoDB( object ):
         
         if self._client.get_default_database() is None :
             self._database = self._client[ default_database ]
+        else:
+            self._database = self._client.get_default_database()
             
         self._collection = self._database[ default_collection ]
-        self._uri_dict = pymongo.uri_parser.parse_uri( self._uri )
         
-        if not "database" in self._uri_dict :
+        if not "database" in self._uri :
             self._url_dict[ 'database' ] = default_database
             
-        if not "collection" in self._uri_dict :
+        if not "collection" in self._uri :
             self._uri_dict[ 'collection' ] = default_collection
         
     def uri_info(self):
@@ -45,10 +46,10 @@ class MUGAlyserMongoDB( object ):
         return self._client
     
     def database(self):
-        self._uri_dict[ 'database']
+        return self._database
         
-    def collection(self):
-        self._uri_dict[ 'collection' ]
+    def collection(self, collection_name ):
+        return self._database[ 'collection_name' ]
         
     def connect(self):
         

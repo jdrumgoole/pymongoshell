@@ -9,14 +9,14 @@ import datetime
 
 from mongodb_utils.agg import Agg, CursorFormatter
 from mongodb_utils.nested_dict import Nested_Dict
-from mongodb_utils.mongodb import MUGAlyserMongoDB
+from mongodb_utils.mongodb import MongoDB
 
 class Test(unittest.TestCase):
 
 
     def setUp(self):
-        self._mdb = MUGAlyserMongoDB()
-        self._agg = Agg( self._mdb.membersCollection())
+        self._mdb = MongoDB()
+        self._agg = Agg( self._mdb.collection( "test"))
         
     def tearDown(self): 
         pass
@@ -29,14 +29,14 @@ class Test(unittest.TestCase):
                                 "member.join_time" : 1,
                                 "member.city" : 1,
                              })
-        cursor = self._agg.aggregate()
+
         prefix="agg_test_"
         filename="JoeDrumgoole"
         ext = "json"
-        self._formatter = CursorFormatter( cursor, prefix=prefix, name=filename, ext=ext)
+        self._formatter = CursorFormatter( self._agg, filename=filename, formatter=ext)
         self._formatter.output( fieldNames=[ "member.member_name", "member.join_time", "member.city"], datemap=[ "member.join_time"] )
-        self.assertTrue( os.path.isfile( prefix + filename + "." + ext ))
-        os.unlink( prefix + filename + "." + ext )
+        self.assertTrue( os.path.isfile( filename ))
+        os.unlink( filename )
         
     def testFieldMapper(self):
         

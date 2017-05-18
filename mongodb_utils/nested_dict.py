@@ -36,7 +36,7 @@ class Nested_Dict( object ):
             raise ValueError( "nested key :'%s' does not exist in keys %s of %s" % ( keys[ 0 ], keys, self._dict ))
         
         if isinstance( nested, dict ) :
-            nested = nested_dict( nested )
+            nested = Nested_Dict( nested )
             return nested.get_value( keys[ 1 ] )
         else:
             return nested
@@ -53,7 +53,7 @@ class Nested_Dict( object ):
             raise ValueError( "nested key :'%s' does not exist" % keys[ 0 ])
         
         if isinstance( nested, dict ) :
-            nested = nested_dict( nested )
+            nested = Nested_Dict( nested )
             return nested.has_key( keys[ 1 ] )
         else:
             return True
@@ -73,7 +73,7 @@ class Nested_Dict( object ):
             nested = self._dict[ keys[ 0 ]]
         
         if isinstance( nested, dict ) :
-            nested = NestedDict( nested )
+            nested = Nested_Dict( nested )
             nested.set_value( keys[ 1 ], v )
             return self
 
@@ -107,7 +107,7 @@ class dotted_dict( dict ):
             raise ValueError( "nested key :'%s' does not exist in keys %s of %s" % ( keys[ 0 ], keys, self._dict ))
         
         if isinstance( nested, dict ) :
-            nested = NestedDict( nested )
+            nested = Nested_Dict( nested )
             return nested.get_value( keys[ 1 ] )
         else:
             return nested
@@ -124,7 +124,7 @@ class dotted_dict( dict ):
             raise ValueError( "nested key :'%s' does not exist" % keys[ 0 ])
         
         if isinstance( nested, dict ) :
-            nested = NestedDict( nested )
+            nested = Nested_Dict( nested )
             return nested.has_key( keys[ 1 ] )
         else:
             return True
@@ -144,6 +144,6 @@ class dotted_dict( dict ):
             nested = self._dict[ keys[ 0 ]]
         
         if isinstance( nested, dict ) :
-            nested = NestedDict( nested )
+            nested = Nested_Dict( nested )
             nested.set_value( keys[ 1 ], v )
             return self

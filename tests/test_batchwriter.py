@@ -6,7 +6,7 @@ Created on 13 Dec 2016
 import unittest
 import pymongo
 
-from batchwriter import BatchWriter
+from mongodb_utils.batchwriter import BatchWriter
 
 class Test(unittest.TestCase):
 
