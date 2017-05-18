@@ -5,6 +5,7 @@ Created on 22 Jun 2016
 '''
 
 import pymongo
+import pprint
 
 class MongoDB( object ):
     
@@ -26,13 +27,13 @@ class MongoDB( object ):
         
         self._client = pymongo.MongoClient( uri )
         self._uri_dict = pymongo.uri_parser.parse_uri( uri )
-        
+        pprint.pprint( self._uri_dict )
         if self._client.get_default_database() is None :
             self._database = self._client[ default_database ]
         else:
             self._database = self._client.get_default_database()
             
-        if not "collection" in self._uri_dict:
+        if self._uri_dict[ "collection" ]  is None :
             self._collection = self._database[ default_collection ]
         else:
             self._collection = self._database[ self._uri_dict[ "collection"]]
