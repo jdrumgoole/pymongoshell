@@ -5,7 +5,7 @@ Created on 19 Mar 2017
 '''
 import unittest
 import pymongo
-from mugalyser.agg import Sorter
+from mongodb_utils.agg import Sorter
 
 class Test_sorter(unittest.TestCase):
 

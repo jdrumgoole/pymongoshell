@@ -23,14 +23,10 @@ class Test(unittest.TestCase):
         
         bw = BatchWriter( self._c )
         writer = bw.bulkWrite( buf )
-        totalInserted = 0 
         for i in range( loopSize ) :
-            r = writer.send( { "v" : i })
-            if r is not None and r[ 'nInserted' ] > 0  :
-                #print( r )
-                totalInserted =r[ 'nInserted' ] + totalInserted
+            writer.send( { "v" : i })
         
-        return totalInserted
+        return bw.written()
         
     def test_write(self):
         

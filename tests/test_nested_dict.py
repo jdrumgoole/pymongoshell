@@ -4,7 +4,6 @@ Created on 3 May 2017
 @author: jdrumgoole
 '''
 import unittest
-import pprint
 
 from mongodb_utils.nested_dict import Nested_Dict
 

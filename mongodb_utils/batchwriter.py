@@ -1,4 +1,9 @@
 '''
+
+Use a generator function to recieve data from the send command. Accumulate docs until
+writeLimit is reached and then bulkexecute writes. Keep a count of write ops in
+writeCount.
+
 Created on 12 Oct 2016
 
 @author: jdrumgoole
@@ -28,9 +33,12 @@ class BatchWriter(object):
             self._newDocName = ""
         else:
             self._newDocName = newDocName
-         
+            
+        self._writeCount = 0
 
-
+    def written(self):
+        return self._writeCount
+    
     '''
     Intialise coroutine automatically
     '''
@@ -53,7 +61,8 @@ class BatchWriter(object):
                     bulker.insert( self._processFunc(  self._newDocName, doc  ))
                     bulkerCount = bulkerCount + 1 
                     if ( bulkerCount == writeLimit ):
-                        bulker.execute()
+                        result = bulker.execute()
+                        self._writeCount = self._writeCount + result['nInserted' ]
                         if self._orderedWrites :
                             bulker = self._collection.initialize_ordered_bulk_op()
                         else:
@@ -62,7 +71,8 @@ class BatchWriter(object):
                         bulkerCount = 0
             except GeneratorExit :
                 if ( bulkerCount > 0 ) :
-                    bulker.execute() 
+                    result = bulker.execute() 
+                    self._writeCount = self._writeCount + result['nInserted' ]
             except bson.errors.InvalidDocument as e:
                 print( "Invalid Document" )
                 print( "bson.errors.InvalidDocument: %s" % e )

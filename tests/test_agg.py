@@ -6,10 +6,9 @@ Created on 21 Mar 2017
 import os
 import unittest
 import datetime
-import pprint
+#import pprint
 
 from mongodb_utils.agg import Agg, CursorFormatter
-from mongodb_utils.nested_dict import Nested_Dict
 from mongodb_utils.mongodb import MongoDB
 
 class Test(unittest.TestCase):
@@ -18,6 +17,7 @@ class Test(unittest.TestCase):
     def setUp(self):
         self._mdb = MongoDB( uri="mongodb://localhost:27017/MUGS" )
         self._agg = Agg( self._mdb.database()[ "members"])
+        self._formatter = None
         
     def tearDown(self): 
         pass
@@ -30,7 +30,7 @@ class Test(unittest.TestCase):
                                 "member.joined" : 1,
                                 "member.city" : 1,
                              })
-        prefix="agg_test_"
+        
         filename="JoeDrumgoole"
         ext = "json"
         self._formatter = CursorFormatter( self._agg, filename=filename, formatter=ext)

@@ -1,4 +1,5 @@
 '''
+Agg is a convenience class for constructing MongoDB Aggregation pipelines
 
 @author: jdrumgoole
 '''
@@ -12,6 +13,8 @@ import csv
 import contextlib
 import sys
 import json
+
+
 class Sorter( object ):
     '''
     Required for ordered sorting of fields as python dictionaries do not 
@@ -79,7 +82,6 @@ class CursorFormatter( object ):
         else:
             raise ValueError( "aggregate argument to CursorFormatter is not of class Agg or cursor")
         
-        self._agg = agg
         self._format = formatter
         self._filename = filename
         if results is None:
@@ -108,7 +110,8 @@ class CursorFormatter( object ):
     @staticmethod
     def dateMapField( doc, field, time_format=None):
         '''
-        Given a field that contains a datetime 
+        Given a field that contains a datetime we want it to be output as a string otherwise
+        pprint and other functions will abondon ship when they meet BSON time objects
         '''
         
         if time_format is None:
@@ -125,7 +128,10 @@ class CursorFormatter( object ):
     @staticmethod
     def fieldMapper( doc, fields ): 
         '''
-        Copy all fields from doc to a new doc and return that doc
+        Take 'doc' and create a new doc using only keys from the 'fields' list.
+        Supports referencing fields using dotted notation "a.b.c" so we can parse
+        nested fields the way MongoDB does. The nested field class is a hack. It should 
+        be a sub-class of dict.
         '''
         
         
@@ -149,7 +155,7 @@ class CursorFormatter( object ):
     def dateMapper( doc, datemap, time_format=None ):
         '''
         For all the fields in "datemap" find that key in doc and map the datetime object to 
-        a strftime string.
+        a strftime string. This pprint and others will print out readable datetimes.
         '''
         if datemap:
             for i in datemap :
@@ -158,7 +164,9 @@ class CursorFormatter( object ):
                 
     def printCSVCursor( self, c, fieldnames, datemap, time_format=None):
         '''
-        Output CSV format. items are separated by commas.
+        Output CSV format. items are separated by commas. We only output the fields listed
+        in the 'fieldnames'. We datemap fields listed in 'datemap'. If a datemap listed field
+        is not a datetime object we will thow an exception.
         '''
             
         with self._smart_open( self._filename ) as output :
@@ -478,6 +486,9 @@ class Agg(object):
         return self.aggregate()
 
     def create_view(self, database, view_name, collation=None  ):
+        '''
+        Create a view using the existing pipeline constructed within the class
+        '''
         
         if collation is None:
             return database.command( { "view" : view_name, 
