@@ -2,6 +2,10 @@
 Agg is a convenience class for constructing MongoDB Aggregation pipelines
 
 @author: jdrumgoole
+
+Helper class to make construction of aggregation pipelines in MongoDB
+easier.
+
 '''
 import pprint
 from datetime import datetime

@@ -1,3 +1,4 @@
+
 '''
 Created on 30 Sep 2016
 
@@ -12,7 +13,6 @@ pyfiles = [ f for f in os.listdir( "." ) if f.endswith( ".py" ) ]
 setup(
     name = "mongodb_utils",
     version = "0.9.3",
-    
     author = "Joe Drumgoole",
     author_email = "joe@joedrumgoole.com",
     description = "MongoDB Utils - A package of utilities for use with MongoDB",
@@ -20,6 +20,7 @@ setup(
 A simple class for initiating MongoDB connections and an aggregation convenience
 class agg.py that helps in building aggregation pipelines".
 ''',
+
     license = "AGPL",
     keywords = "MongoDB API Aggregation",
     url = "https://github.com/jdrumgoole/mongodb_utils",

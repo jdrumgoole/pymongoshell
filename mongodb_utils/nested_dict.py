@@ -39,6 +39,7 @@ class Nested_Dict( object ):
         
         if isinstance( nested, dict ) :
             return Nested_Dict( nested ).get_value( '.'.join(keys[ 1:len( keys )]))
+
         else:
             return nested
     
@@ -58,6 +59,7 @@ class Nested_Dict( object ):
         
         if isinstance( nested, dict ) :
             return Nested_Dict( nested ).has_key( keys[ 1 ] )
+
         else:
             return True
                       
@@ -76,13 +78,12 @@ class Nested_Dict( object ):
             nested = self._dict[ keys[ 0 ]]
         
         if isinstance( nested, dict ) :
+
             return Nested_Dict( nested ).set_value( '.'.join( keys[ 1:len( keys ) ]), v  )
         else:
             self._dict[ keys[ 0 ]] = v
              
         return self
-
-
 
 # class dotted_dict( dict ):
 #     '''

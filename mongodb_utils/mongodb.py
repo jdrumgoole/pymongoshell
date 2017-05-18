@@ -8,10 +8,11 @@ import pymongo
 
 class MongoDB( object ):
     
-    def __init__(self, uri="mongodb://localhost:27017/",
-                         default_port = 20717,
-                         default_database = "test",
-                         default_collection = "test" ):      
+    def __init__(self, uri="mongodb://localhost:27017/test",
+                 default_port = 20717,
+                 default_database = "test",
+                 default_collection = "test" ):      
+
         '''
         Example URL 
         
@@ -31,13 +32,10 @@ class MongoDB( object ):
         else:
             self._database = self._client.get_default_database()
             
-        self._collection = self._database[ default_collection ]
-        
-        if not "database" in self._uri_dict :
-            self._uri_dict[ 'database' ] = default_database
-            
-        if not "collection" in self._uri_dict :
-            self._uri_dict[ 'collection' ] = default_collection
+        if not "collection" in self._uri_dict:
+            self._collection = self._database[ default_collection ]
+        else:
+            self._collection = self._database[ self._uri_dict[ "collection"]]
         
     def uri_info(self):
         return self._uri_dict
@@ -48,8 +46,8 @@ class MongoDB( object ):
     def database(self):
         return self._database
         
-    def collection(self):
-        self._uri_dict[ 'collection' ]
+    def collection(self, collection_name ):
+        return self._database[ collection_name ]
         
     def connect(self):
         

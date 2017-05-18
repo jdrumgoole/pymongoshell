@@ -13,11 +13,11 @@ from mongodb_utils.mongodb import MongoDB
 
 class Test(unittest.TestCase):
 
-
     def setUp(self):
-        self._mdb = MongoDB( uri="mongodb://localhost:27017/MUGS" )
-        self._agg = Agg( self._mdb.database()[ "members"])
+        self._mdb = MongoDB( uri="mongodb://localhost:27017/test" )
+        self._agg = Agg( self._mdb.collection( "test"))
         self._formatter = None
+
         
     def tearDown(self): 
         pass
@@ -30,11 +30,12 @@ class Test(unittest.TestCase):
                                 "member.joined" : 1,
                                 "member.city" : 1,
                              })
-        
+
         filename="JoeDrumgoole"
         ext = "json"
         self._formatter = CursorFormatter( self._agg, filename=filename, formatter=ext)
-        self._formatter.output( fieldNames=[ "member.name", "member.joined", "member.city"], datemap=[ "member.joined"] )
+        self._formatter.output( fieldNames=[ "member.member_name", "member.join_time", "member.city"], datemap=[ "member.join_time"] )
+
         self.assertTrue( os.path.isfile( filename ))
         os.unlink( filename )
         
