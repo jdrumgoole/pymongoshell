@@ -36,7 +36,7 @@ class MongoDB( object ):
         if self._uri_dict[ "collection" ]  is None :
             self._collection = self._database[ default_collection ]
         else:
-            self._collection = self._database[ self._uri_dict[ "collection"]]
+            self._collection = self._database[ self._uri_dict["collection"]]
         
     def uri_info(self):
         return self._uri_dict
