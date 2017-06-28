@@ -12,7 +12,7 @@ pyfiles = [ f for f in os.listdir( "." ) if f.endswith( ".py" ) ]
     
 setup(
     name = "mongodb_utils",
-    version = "0.9.3a1",
+    version = "0.9.3a3",
     author = "Joe Drumgoole",
     author_email = "joe@joedrumgoole.com",
     description = "MongoDB Utils - A package of utilities for use with MongoDB",

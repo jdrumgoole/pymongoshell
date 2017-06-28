@@ -243,8 +243,8 @@ class CursorFormatter( object ):
             if limit :
                 self._agg.addLimit( limit )
             if aggregate :
-                print( self._agg )
-            cursor = self._agg.aggregate()
+                #print( self._agg )
+                cursor = self._agg.aggregate()
         else:
             cursor = self._agg
         count = self.printCursor( cursor, fieldNames, datemap, time_format )
