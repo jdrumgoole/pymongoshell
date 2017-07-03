@@ -67,6 +67,9 @@ class Sorter( object ):
         
 class CursorFormatter( object ):
     '''
+    Output a set of cursor elements by iterating over then. If the argument is an 
+    agg object called aggegate on it first.
+    
     Take a mongodb Agg object and call aggregate on it.
     IF root is "-" send the output to stdout.
     
@@ -243,10 +246,11 @@ class CursorFormatter( object ):
             if limit :
                 self._agg.addLimit( limit )
             if aggregate :
-                print( self._agg )
-            cursor = self._agg.aggregate()
+                #print( self._agg )
+                cursor = self._agg.aggregate()
         else:
             cursor = self._agg
+            
         count = self.printCursor( cursor, fieldNames, datemap, time_format )
         print( "Wrote %i records" % count )
         
