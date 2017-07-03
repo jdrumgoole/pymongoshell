@@ -18,12 +18,15 @@ def no_op( new_name, d ) :
     _ = new_name
     return d
 
+def feedback( doc ):
+    print( "." )
+
 class BatchWriter(object):
      
-    def __init__(self, collection, transformFunc=None, newDocName=None, orderedWrites=False ):
+    def __init__(self, collection, transformFunc=None, newDocName=None, feedback=None):
          
         self._collection = collection
-        self._orderedWrites = orderedWrites
+        self._orderedWrites = False
         if transformFunc is None:
             self._processFunc = no_op
         else:
@@ -36,6 +39,8 @@ class BatchWriter(object):
             
         self._writeCount = 0
 
+        self._feedback = feedback
+        
     def written(self):
         return self._writeCount
     
@@ -56,7 +61,8 @@ class BatchWriter(object):
             try :
                 while True:
                     doc = (yield)
-                    
+                    if self._feedback :
+                        feedback( doc )
                     #pprint.pprint( doc )) 
                     bulker.insert( self._processFunc(  self._newDocName, doc  ))
                     bulkerCount = bulkerCount + 1 
