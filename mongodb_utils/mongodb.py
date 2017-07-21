@@ -27,7 +27,7 @@ class MongoDB( object ):
         
         self._client = pymongo.MongoClient( uri )
         self._uri_dict = pymongo.uri_parser.parse_uri( uri )
-        pprint.pprint( self._uri_dict )
+        #pprint.pprint( self._uri_dict )
         if self._client.get_default_database() is None :
             self._database = self._client[ default_database ]
         else:
@@ -50,6 +50,9 @@ class MongoDB( object ):
     def collection(self, collection_name ):
         return self._database[ collection_name ]
         
+    def default_collection(self):
+        return self._collection
+    
     def connect(self):
         
         return self._database.command("ismaster")

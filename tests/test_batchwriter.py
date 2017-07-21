@@ -12,27 +12,39 @@ class Test(unittest.TestCase):
 
     def setUp(self):
         self._client = pymongo.MongoClient()
-        self._db = self._client[ "test"]
-        self._c = self._db[ "test" ]
+        self._db = self._client[ "bwtest"]
+        self._c = self._db[ "bwtest" ]
+        self._db.drop_collection( "bwtest")
 
 
     def tearDown(self):
+        #self._client.drop_database( "bwtest")
+        self._db.drop_collection( "bwtest")
         pass
-
+    
     def _write(self, buf, loopSize ):
         
         bw = BatchWriter( self._c )
         writer = bw.bulkWrite( buf )
         for i in range( loopSize ) :
+            print( { "v" : i } )
             writer.send( { "v" : i })
         
+        cursor  = self._c.find()
+        count = 0
+        for i in cursor:
+            print( "i : %s" % i )
+            self.assertTrue( i[ "v"] == count  )
+            count = count + 1 
+                
+        #self._db.drop_collection( "bwtest")
         return bw.written()
         
     def test_write(self):
         
         written = self._write( 1, 1)
         self.assertEqual( written, 1 )
-        
+
         written = self._write( 2, 1)
         self.assertEqual( written, 0 )
         
