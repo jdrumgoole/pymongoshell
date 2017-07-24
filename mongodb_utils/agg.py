@@ -128,7 +128,7 @@ class CursorFormatter( object ):
         if isinstance( value, datetime ):
             d.set_value( field, value.strftime( time_format ) )
         else:
-            raise ValueError( "Field '%s' is not a datetime field" % field )
+            d.set_value( field, datetime.fromtimestamp( value /1000 ))
 
         return d.dict_value()
        
