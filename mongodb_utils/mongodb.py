@@ -5,12 +5,11 @@ Created on 22 Jun 2016
 '''
 
 import pymongo
-import pprint
+#import pprint
 
 class MongoDB( object ):
     
     def __init__(self, uri="mongodb://localhost:27017/test",
-                 default_port = 20717,
                  default_database = "test",
                  default_collection = "test" ):      
 
