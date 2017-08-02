@@ -124,11 +124,12 @@ class CursorFormatter( object ):
         if time_format is None:
             time_format = "%d-%b-%Y %H:%M"
         d = Nested_Dict( doc )
-        value = d.get_value(  field )
-        if isinstance( value, datetime ):
-            d.set_value( field, value.strftime( time_format ) )
-        else:
-            d.set_value( field, datetime.fromtimestamp( value /1000 ))
+        if d.has_key( field ):
+            value = d.get_value(  field )
+            if isinstance( value, datetime ):
+                d.set_value( field, value.strftime( time_format ) )
+            else:
+                d.set_value( field, datetime.fromtimestamp( value /1000 ))
 
         return d.dict_value()
        
@@ -154,8 +155,6 @@ class CursorFormatter( object ):
                 #print( "doc: %s" % doc )
                 #print( "i: %s" %i )
                 newDoc.set_value( i, oldDoc.get_value(  i ))
-            else:
-                raise ValueError( "No such key '%s' in %s" % (i, doc )) 
         return newDoc.dict_value() 
     
     @staticmethod
@@ -166,7 +165,8 @@ class CursorFormatter( object ):
         '''
         if datemap:
             for i in datemap :
-                CursorFormatter.dateMapField( doc, i, time_format=time_format )
+                if isinstance( i, datetime ) :
+                    CursorFormatter.dateMapField( doc, i, time_format=time_format )
         return doc
                 
     def printCSVCursor( self, c, fieldnames, datemap, time_format=None):
@@ -232,6 +232,8 @@ class CursorFormatter( object ):
             
         return count 
     
+
+            
     def output(self, fieldNames=None, datemap=None, time_format=None, aggregate=True, limit=None ):
         '''
         Output all fields using the fieldNames list. for fields in the list datemap indicates the field must
@@ -515,3 +517,8 @@ class Agg(object):
         for i in self.aggregate():
             output.append( i )
             yield i
+  
+    def simple_print( self ):
+        cursor = self.aggregate()
+        for i in cursor:
+            pprint.pprint( i )
