@@ -6,6 +6,10 @@ Created on 30 Sep 2016
 '''
 from setuptools import setup
 import os
+from codecs import open
+
+def read(f):
+    return open(f, encoding='utf-8').read()
 
 pyfiles = [ f for f in os.listdir( "." ) if f.endswith( ".py" ) ]
 
