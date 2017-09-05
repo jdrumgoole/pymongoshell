@@ -16,7 +16,7 @@ setup(
     author = "Joe Drumgoole",
     author_email = "joe@joedrumgoole.com",
     description = "MongoDB Utils - A package of utilities for use with MongoDB",
-    long_description = read('README.rst')
+    long_description = read('README.rst'),
     package_data={'': ['LICENSE']},
     include_package_data=True,
     keywords = "MongoDB API Aggregation",
