@@ -27,10 +27,10 @@ class MongoDB( object ):
         self._client = pymongo.MongoClient( uri )
         self._uri_dict = pymongo.uri_parser.parse_uri( uri )
         #pprint.pprint( self._uri_dict )
-        if self._client.get_default_database() is None :
+        if self._client.get_database() is None :
             self._database = self._client[ default_database ]
         else:
-            self._database = self._client.get_default_database()
+            self._database = self._client.get_database()
             
         if self._uri_dict[ "collection" ]  is None :
             self._collection = self._database[ default_collection ]
@@ -46,6 +46,9 @@ class MongoDB( object ):
     def database(self):
         return self._database
         
+    def drop_database(self):
+        self._client.drop_database( self._database )
+
     def collection(self, collection_name ):
         return self._database[ collection_name ]
         

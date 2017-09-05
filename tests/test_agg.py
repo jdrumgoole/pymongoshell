@@ -5,7 +5,7 @@ Created on 21 Mar 2017
 '''
 import os
 import unittest
-import datetime
+from datetime import  datetime
 #import pprint
 
 from mongodb_utils.agg import Agg, CursorFormatter
@@ -14,27 +14,34 @@ from mongodb_utils.mongodb import MongoDB
 class Test(unittest.TestCase):
 
     def setUp(self):
-        self._mdb = MongoDB( uri="mongodb://localhost:27017/test" )
-        self._agg = Agg( self._mdb.collection( "test"))
+        self._mdb = MongoDB( uri="mongodb://localhost:27017/testgg" )
+        self._col = self._mdb.collection( "testgg" )
+        for i in range( 50 ):
+            self._col.insert_one( { "member" : { "name" : "Joe Drumgoole%s" % i,
+                                                 "id"   : i,
+                                                 "ts"   : datetime.utcnow() }})
+        self._agg = Agg( self._col )
         self._formatter = None
+        
+        
 
         
     def tearDown(self): 
-        pass
+        self._mdb.drop_database()
 
     def testFormatter(self):
-        self._agg.addMatch( { "batchID" : 47, "member.name" : "Joe Drumgoole" })
+        self._agg.addMatch( { "member.name" : "Joe Drumgoole0" })
         #print( "agg: %s" % self._agg )
         self._agg.addProject( { "member.name" : 1,
+                                "member.id" : 1,
                                 "_id" : 0,
-                                "member.joined" : 1,
-                                "member.city" : 1,
+                                "member.ts" :1
                              })
 
         filename="JoeDrumgoole"
         ext = "json"
         self._formatter = CursorFormatter( self._agg, filename=filename, formatter=ext)
-        self._formatter.output( fieldNames=[ "member.member_name", "member.join_time", "member.city"], datemap=[ "member.join_time"] )
+        self._formatter.output( fieldNames=[ "member.name", "member.id", "member.ts"], datemap=[ "member.ts"] )
 
         self.assertTrue( os.path.isfile( filename ))
         os.unlink( filename )
@@ -47,15 +54,15 @@ class Test(unittest.TestCase):
         doc = { "a" : "b"}
         
         newdoc = CursorFormatter.fieldMapper( doc , [ 'a' ])
-        self.assertTrue( newdoc.has_key( "a" ))
+        self.assertTrue( "a" in newdoc )
         
         doc = { "a" : "b", 
                 "c" : "d", 
                 "e" : "f" }
         newdoc = CursorFormatter.fieldMapper( doc , [ 'a', 'c' ])
-        self.assertTrue( newdoc.has_key( "a" ))
-        self.assertTrue( newdoc.has_key( "c" )) 
-        self.assertFalse( newdoc.has_key( "e" ))
+        self.assertTrue("a" in newdoc )
+        self.assertTrue("c" in  newdoc ) 
+        self.assertFalse( "e" in newdoc )
         
         doc = { "a" : "b", 
                 "c" : "d", 
@@ -63,11 +70,11 @@ class Test(unittest.TestCase):
                 "z" : { "w" : "x"}}
         
         newdoc = CursorFormatter.fieldMapper( doc , [ 'a', 'c', "z.w"])
-        self.assertTrue( newdoc.has_key( "a" ))
-        self.assertTrue( newdoc.has_key( "c" ))
-        self.assertTrue( newdoc.has_key( "z" ))
-        self.assertTrue( newdoc["z"].has_key( "w" ))
-        self.assertFalse( newdoc.has_key( "e" ))
+        self.assertTrue( "a" in newdoc )
+        self.assertTrue( "c" in newdoc )
+        self.assertTrue( "z" in newdoc )
+        self.assertTrue( "w" in newdoc[ "z"] )
+        self.assertFalse( "e" in newdoc )
         
         doc = { "a" : "b", 
                 "c" : "d", 
@@ -76,12 +83,12 @@ class Test(unittest.TestCase):
                         "y" : "p" }}
         
         newdoc = CursorFormatter.fieldMapper( doc , [ 'a', 'c', "z.w"])
-        self.assertTrue( newdoc.has_key( "a" ))
-        self.assertTrue( newdoc.has_key( "c" ))
-        self.assertTrue( newdoc.has_key( "z" ))
-        self.assertTrue( newdoc["z"].has_key( "w" ))
-        self.assertFalse( newdoc.has_key( "e" ))
-        self.assertFalse( newdoc[ 'z' ].has_key( "y" ))
+        self.assertTrue( "a" in newdoc )
+        self.assertTrue( "c" in newdoc)
+        self.assertTrue( "z" in newdoc)
+        self.assertTrue( "w" in newdoc["z"] )
+        self.assertFalse( "e" in newdoc)
+        self.assertFalse( "y" in newdoc[ 'z' ] )
         
         doc = { "a" : "b", 
                 "c" : "d", 
@@ -92,20 +99,20 @@ class Test(unittest.TestCase):
                         "j" : "k" }}
         
         newdoc = CursorFormatter.fieldMapper( doc , [ 'a', 'c', "z.w", "g.j"])
-        self.assertTrue( newdoc.has_key( "a" ))
-        self.assertTrue( newdoc.has_key( "c" ))
-        self.assertTrue( newdoc.has_key( "z" ))
-        self.assertTrue( newdoc["z"].has_key( "w" ))
-        self.assertFalse( newdoc.has_key( "e" ))
-        self.assertFalse( newdoc[ 'z' ].has_key( "y" ))
-        self.assertTrue( newdoc.has_key( "g" ))
-        self.assertTrue( newdoc['g'].has_key( "j"))
-        self.assertFalse( newdoc['g'].has_key( "h"))
+        self.assertTrue( "a" in newdoc)
+        self.assertTrue( "c" in newdoc)
+        self.assertTrue( "z" in newdoc)
+        self.assertTrue( "w" in newdoc["z"] )
+        self.assertFalse( "e" in newdoc)
+        self.assertFalse("y" in newdoc[ 'z' ] )
+        self.assertTrue( "g" in newdoc)
+        self.assertTrue( "j" in newdoc['g'] )
+        self.assertFalse( "h" in newdoc['g'] )
         
         
     def test_dateMapField(self):
         
-        test_doc = { "a" : 1, "b" : datetime.datetime.now()}
+        test_doc = { "a" : 1, "b" : datetime.utcnow()}
         #pprint.pprint( test_doc )
         _ = CursorFormatter.dateMapField(test_doc, "b" )
         #pprint.pprint( new_doc )

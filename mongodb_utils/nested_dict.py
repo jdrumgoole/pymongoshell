@@ -32,7 +32,7 @@ class Nested_Dict( object ):
         if len( keys ) == 1 :
             #print( "len(keys) : 1")
             return self._dict[ keys[ 0 ]]
-        elif self._dict.has_key( keys[ 0 ]) :
+        elif keys[ 0 ] in self._dict :
                 nested = self._dict[ keys[ 0 ]]
         else:
             raise ValueError( "nested key :'%s' does not exist in keys %s of %s" % ( keys[ 0 ], keys, self._dict ))
@@ -51,14 +51,14 @@ class Nested_Dict( object ):
         keys = k.split( ".", 1 )
         nested = None
         if len( keys ) == 1 :
-            return self._dict.has_key( keys[ 0 ] )
-        elif self._dict.has_key( keys[ 0 ]) :
+            return keys[ 0 ] in self._dict
+        elif keys[ 0 ] in self._dict :
                 nested = self._dict[ keys[ 0 ]]
         else:
             raise ValueError( "nested key :'%s' does not exist" % keys[ 0 ])
         
         if isinstance( nested, dict ) :
-            return Nested_Dict( nested ).has_key( keys[ 1 ] )
+            return keys[ 1 ] in Nested_Dict( nested ).dict_value()
 
         else:
             return True
@@ -71,7 +71,7 @@ class Nested_Dict( object ):
         if len( keys ) == 1 :
             self._dict[ keys[ 0 ]] = v
             return self
-        elif self._dict.has_key( keys[ 0 ]) :
+        elif keys[ 0 ] in self._dict :
             nested = self._dict[ keys[ 0 ]]
         else:
             self._dict[ keys[ 0 ]] = {}
