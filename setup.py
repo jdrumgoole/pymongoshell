@@ -16,12 +16,9 @@ setup(
     author = "Joe Drumgoole",
     author_email = "joe@joedrumgoole.com",
     description = "MongoDB Utils - A package of utilities for use with MongoDB",
-    long_description = '''
-A simple class for initiating MongoDB connections and an aggregation convenience
-class agg.py that helps in building aggregation pipelines".
-''',
-
-    license = "AGPL",
+    long_description = read('README.rst')
+    package_data={'': ['LICENSE']},
+    include_package_data=True,
     keywords = "MongoDB API Aggregation",
     url = "https://github.com/jdrumgoole/mongodb_utils",
     
@@ -37,7 +34,7 @@ class agg.py that helps in building aggregation pipelines".
 
 
         # Pick your license as you wish (should match "license" above)
-        'License :: OSI Approved :: GNU Affero General Public License v3',
+        'License :: OSI Approved :: Apache License V2.0',
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
@@ -46,9 +43,6 @@ class agg.py that helps in building aggregation pipelines".
     install_requires = [ "pymongo", "nose" ],
        
     packages = [ "mongodb_utils"],
-    
-
-
     test_suite='nose.collector',
     tests_require=['nose'],
 )
