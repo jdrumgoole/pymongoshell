@@ -13,15 +13,49 @@ import pymongo
 import bson
 
 from mongodb_utils.generator_utils import coroutine
+from pydoc import doc
 
 def no_op( new_name, d ) :
     _ = new_name
     return d
 
-def feedback( doc ):
+def feedback_nop( doc ):
+    _ = doc
     print( "." )
 
-class BatchWriter(object):
+class Pipeline( object ):
+       
+    def actor(self, doc ):
+        return doc
+    
+    @coroutine  
+    def pour(self, destination ):
+        while True:
+            doc = (yield)
+            destination.send( self.actor( doc ))
+
+class Sink( object ):
+        
+    def ender( self, doc  ):
+        pass 
+    
+    @coroutine
+    def drain( self ):
+        while True:
+            doc = (yield)
+            self.ender( doc )
+            
+class Bulk_Writer(object):
+    '''
+    Bulk_Writer
+    ==================
+    Bulk_Writer is a wrapper class for the bulk_write operation in mongodb. It allows user
+    to send (using generator send operations) write and update operations to MongoDB which accumulates 
+    them up a batch_size threshold. Once the threshold is met the operations are committed to the server.
+    
+    In the event that the generator is destroy before completing its write operations then the generator exit
+    exception that is called will force remaining writes to be completed.
+    '''
      
     def __init__(self, collection, transformFunc=None, newDocName=None, feedback=None):
          
@@ -48,7 +82,7 @@ class BatchWriter(object):
     Intialise coroutine automatically
     '''
     @coroutine 
-    def bulkWrite(self, writeLimit=1000 ):
+    def __call__(self, writeLimit=1000 ):
         bulker = None
         try : 
             if self._orderedWrites :
@@ -62,7 +96,7 @@ class BatchWriter(object):
                 while True:
                     doc = (yield)
                     if self._feedback :
-                        feedback( doc )
+                        self._feedback( doc )
                     #pprint.pprint( doc )) 
                     bulker.insert( self._processFunc(  self._newDocName, doc  ))
                     bulkerCount = bulkerCount + 1 
@@ -82,8 +116,8 @@ class BatchWriter(object):
             except bson.errors.InvalidDocument as e:
                 print( "Invalid Document" )
                 print( "bson.errors.InvalidDocument: %s" % e )
-
                 raise
+            
         except pymongo.errors.BulkWriteError as e :
             print( "Bulk write error : %s" % e.details )
             raise

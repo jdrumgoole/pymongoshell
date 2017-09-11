@@ -20,39 +20,54 @@ class Test(unittest.TestCase):
     def tearDown(self):
         #self._client.drop_database( "bwtest")
         self._db.drop_collection( "bwtest")
-        pass
     
-    def _write(self, buf, loopSize ):
+    @staticmethod
+    def _feedback( doc ):
+        print( "send( %s )" % doc )
         
-        bw = BatchWriter( self._c )
-        writer = bw.bulkWrite( buf )
-        for i in range( loopSize ) :
-            print( { "v" : i } )
+    def _write(self, write_limit, doc_count ):
+        
+        bw = BatchWriter( self._c ) #feedback=Test._feedback )
+        writer = bw.bulkWrite( write_limit )
+        for i in range( doc_count ) :
+            #print( { "v" : i } )
             writer.send( { "v" : i })
         
+        writer.close()
         cursor  = self._c.find()
         count = 0
         for i in cursor:
-            print( "i : %s" % i )
-            self.assertTrue( i[ "v"] == count  )
+            self.assertEqual( i[ "v"], count  )
             count = count + 1 
                 
-        #self._db.drop_collection( "bwtest")
+
         return bw.written()
         
     def test_write(self):
-        
+        self._db.drop_collection( "bwtest")
         written = self._write( 1, 1)
-        self.assertEqual( written, 1 )
+        self.assertEqual( written, self._c.count() )
+        self._db.drop_collection( "bwtest")
 
         written = self._write( 2, 1)
-        self.assertEqual( written, 0 )
+        self.assertEqual( written, 1 )
+        self.assertEqual( self._c.count(), 1 )
+        self._db.drop_collection( "bwtest")
+        
+        written = self._write( 2, 2 )
+        self.assertEqual( written, 2 )
+        self.assertEqual( self._c.count(), 2 )
+        self._db.drop_collection( "bwtest")
         
         written = self._write( 10, 50 )
         self.assertEqual( written, 50 )
+        self.assertEqual( self._c.count(), 50 )
+        self._db.drop_collection( "bwtest")
         
         written = self._write( 50, 50 )
         self.assertEqual( written, 50 )
+        self.assertEqual( self._c.count(), 50 )
+        self._db.drop_collection( "bwtest")
         
 #         bw = BatchWriter( self._c )
 #         writer = bw.bulkWrite( 50 )

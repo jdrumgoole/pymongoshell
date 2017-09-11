@@ -5,7 +5,7 @@ Created on 21 Mar 2017
 '''
 import os
 import unittest
-from datetime import  datetime
+from datetime import datetime
 #import pprint
 
 from mongodb_utils.agg import Agg, CursorFormatter

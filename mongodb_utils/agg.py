@@ -1,5 +1,8 @@
 '''
-Agg is a convenience class for constructing MongoDB Aggregation pipelines
+Agg
++++++
+
+``Agg`` is a convenience class for constructing MongoDB Aggregation pipelines
 
 @author: jdrumgoole
 
@@ -22,7 +25,8 @@ import json
 class Sorter( object ):
     '''
     Required for ordered sorting of fields as python dictionaries do not 
-    guarantee to maintain insertion order
+    guarantee to maintain insertion order. Sorted fields are maintained
+    in an ``OrderedDict`` class that ensures order is maintained. 
     '''
     
     def __init__(self,  **kwargs ):
@@ -102,7 +106,7 @@ class CursorFormatter( object ):
     @contextlib.contextmanager
     def _smart_open(self, filename=None):
         if filename and filename != '-':
-            fh = open(filename, 'wb' )
+            fh = open(filename, 'w' )
         else: 
             fh = sys.stdout
     
@@ -197,7 +201,6 @@ class CursorFormatter( object ):
                 writer.writerow( {k:v.encode('utf8') for k,v in x.items()} ) 
             
         return count
-
     
     def printJSONCursor( self, c,fieldnames, datemap, time_format=None ):
         '''
@@ -213,7 +216,7 @@ class CursorFormatter( object ):
                 self._results.append( i )
                 d = CursorFormatter.fieldMapper( i, fieldnames )
                 #print( "processing fieldmapper: %s" % d )
-                CursorFormatter.dateMapper( d, datemap, time_format )
+                d = CursorFormatter.dateMapper( d, datemap, time_format )
                 pprint.pprint( d, output )
                 count = count + 1
 
@@ -241,8 +244,8 @@ class CursorFormatter( object ):
         '''
         
         cursor = None
-        if self._filename != "-" : 
-            print( "Writing to '%s'" % self._filename )
+#         if self._filename != "-" : 
+#             print( "Writing to '%s'" % self._filename )
         
         if isinstance( self._agg, Agg ):
             if limit :
@@ -254,7 +257,7 @@ class CursorFormatter( object ):
             cursor = self._agg
             
         count = self.printCursor( cursor, fieldNames, datemap, time_format )
-        print( "Wrote %i records" % count )
+#         print( "Wrote %i records" % count )
         
 class Agg(object):
     '''
