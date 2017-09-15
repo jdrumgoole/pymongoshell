@@ -321,6 +321,10 @@ class Agg(object):
             raise ValueError( "Parameters must be dict objects: %s is a %s object " % ( val, t ))
         
 
+    @staticmethod
+    def __lookup( looker ):
+        return { "$lookup" : looker }
+    
     def __hasDollarOutCheck( self, op ):
         if self._hasDollarOut :
             raise ValueError( "Cannot have more aggregation pipeline operations after $out: operation '%s'" % op )
@@ -363,6 +367,10 @@ class Agg(object):
         
         return self
     
+    def addLookup(self, looker ):
+        self.__hasDollarOutCheck( "lookup: %s" % looker )
+        self._agg.append( Agg.__lookup( looker ))
+        
     def addSort(self, sorter ):
         '''
         Sorter can be a single dict or a list of dicts.
