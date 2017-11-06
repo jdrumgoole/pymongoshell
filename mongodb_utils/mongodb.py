@@ -27,7 +27,7 @@ class MongoDB( object ):
         self._client = pymongo.MongoClient( uri )
         self._uri_dict = pymongo.uri_parser.parse_uri( uri )
         #pprint.pprint( self._uri_dict )
-        if self._client.get_database() is None :
+        if len( self._client.database_names()) == 0 :
             self._database = self._client[ default_database ]
         else:
             self._database = self._client.get_database()
