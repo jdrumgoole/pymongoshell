@@ -190,16 +190,16 @@ class CursorFormatter( object ):
                 d = CursorFormatter.fieldMapper( i, fieldnames )
                 d = CursorFormatter.dateMapper( d , datemap,time_format )
 
-                x={}
-                for k,v in d.items():
-
-                    if type( v ) is unicode :
-                        x[ k ] = v
-                    else:
-                        x[ k ] = str( v ).encode( 'utf8')
+                # x={}
+                # for k,v in d.items():
+                #
+                #     if type( v ) is unicode :
+                #         x[ k ] = v
+                #     else:
+                #         x[ k ] = str( v ).encode( 'utf8')
                     
-                writer.writerow( {k:v.encode('utf8') for k,v in x.items()} ) 
-            
+                #writer.writerow( {k:v.encode('utf8') for k,v in x.items()} )
+                writer.writerow({k:v for k, v in d.items()})
         return count
     
     def printJSONCursor( self, c,fieldnames, datemap, time_format=None ):
