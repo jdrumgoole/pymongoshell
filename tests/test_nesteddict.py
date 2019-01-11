@@ -7,8 +7,7 @@ Created on 3 May 2017
 
 import unittest
 
-# from mongodb_utils.nested_dict import Nested_Dict
-from mongodb_utils.nesteddict import NestedDict
+from mongodbutils.nesteddict import NestedDict
 
 
 class TestNestedDict(unittest.TestCase):

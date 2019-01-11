@@ -8,7 +8,8 @@ import pprint
 
 from mongodb_utils.bulkwriter import Pipeline, Sink
 
-class Add_Field( Pipeline ):
+
+class Add_Field(Pipeline):
     
     def __init__(self, name, value ):
         self._name = name
@@ -17,14 +18,15 @@ class Add_Field( Pipeline ):
     def actor(self, doc ):
         doc[ self._name ] = self._value
         return doc
-        
-class Rename_Field( Pipeline ):
+
+
+class Rename_Field(Pipeline):
     
-    def __init__(self, old_name, new_name ):
+    def __init__(self, old_name, new_name):
         self._old_name = old_name
         self._new_name = new_name
         
-    def actor(self, doc ):
+    def actor(self, doc):
         if self._old_name in doc :
             v = doc[ self._old_name ]
             del doc[ self._old_name ]
