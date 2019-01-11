@@ -92,3 +92,6 @@ ENV/
 .project
 .pydevproject
 
+#idea
+.DS_Store/
+.idea/
