@@ -11,6 +11,7 @@ ipython = "*"
 sphinx = "*"
 keyring = "*"
 twine = "*"
+mongodbshell = "*"
 
 [dev-packages]
 
