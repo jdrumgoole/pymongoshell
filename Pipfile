@@ -9,6 +9,8 @@ bson = "*"
 nose = "*"
 ipython = "*"
 sphinx = "*"
+keyring = "*"
+twine = "*"
 
 [dev-packages]
 
