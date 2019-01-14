@@ -15,16 +15,16 @@ pyfiles = [ f for f in os.listdir( "." ) if f.endswith( ".py" ) ]
 
     
 setup(
-    name = "mongodb_utils",
-    version = "0.9.3a4",
+    name = "mongodbshell",
+    version = "0.1",
     author = "Joe Drumgoole",
     author_email = "joe@joedrumgoole.com",
     description = "MongoDB Utils - A package of utilities for use with MongoDB",
     long_description = read('README.rst'),
     package_data={'': ['LICENSE']},
     include_package_data=True,
-    keywords = "MongoDB API Aggregation",
-    url = "https://github.com/jdrumgoole/mongodb_utils",
+    keywords = "MongoDB Python",
+    url = "https://github.com/jdrumgoole/mongodbshell",
     
     classifiers=[
         # How mature is this project? Common values are
@@ -46,7 +46,7 @@ setup(
    
     install_requires = [ "pymongo", "nose" ],
        
-    packages = [ "mongodb_utils"],
+    packages = [ "mongodbshell"],
     test_suite='nose.collector',
     tests_require=['nose'],
 )

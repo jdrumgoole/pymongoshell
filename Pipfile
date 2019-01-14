@@ -8,6 +8,7 @@ pymongo = "*"
 bson = "*"
 nose = "*"
 ipython = "*"
+sphinx = "*"
 
 [dev-packages]
 

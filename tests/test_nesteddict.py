@@ -7,7 +7,7 @@ Created on 3 May 2017
 
 import unittest
 
-from mongodbutils.nesteddict import NestedDict
+from mongodbshell.nesteddict import NestedDict
 
 
 class TestNestedDict(unittest.TestCase):

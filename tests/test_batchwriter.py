@@ -6,7 +6,7 @@ Created on 13 Dec 2016
 import unittest
 import pymongo
 
-from mongodbutils.bulkwriter import BulkWriter
+from mongodbshell.bulkwriter import BulkWriter
 
 
 class Test(unittest.TestCase):

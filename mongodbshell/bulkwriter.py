@@ -12,7 +12,7 @@ Created on 12 Oct 2016
 import pymongo
 import bson
 
-from mongodbutils.generator_utils import coroutine
+from mongodbshell.generator_utils import coroutine
 
 
 def no_op(new_name, d):
