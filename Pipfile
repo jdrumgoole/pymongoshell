@@ -13,6 +13,7 @@ keyring = "*"
 twine = "*"
 mongodbshell = "*"
 dnspython = "*"
+tox = "*"
 
 [dev-packages]
 
