@@ -5,7 +5,7 @@ import pprint
 import shutil
 
 
-class Client:
+class Proxy:
     """
     Simple command line proxy for use in the Python shell.
     """
@@ -14,12 +14,20 @@ class Client:
                  database_name="test",
                  collection_name="test",
                  mongodb_uri="mongodb://localhost:27017"):
-        self.mongodb_uri = mongodb_uri
-        self.client = pymongo.MongoClient(mongodb_uri)
-        self.database_name = database_name
-        self.collection_name = collection_name
-        self.database = database_name
-        self.collection = collection_name
+        """
+        Creat a new client object with a default database and
+        collection.
+
+        :param database_name: The name of the database to be opened
+        :param collection_name: The collection name to be opened
+        :param mongodb_uri: A properly formatted MongoDB URI
+        """
+        self._mongodb_uri = mongodb_uri
+        self._client = pymongo.MongoClient(mongodb_uri)
+        self._database_name = database_name
+        self._collection_name = collection_name
+        self._database = database_name
+        self._collection = collection_name
 
         self._line_numbers = True
         self._overlap = 1
@@ -27,6 +35,14 @@ class Client:
     # def __getattr__(self, item):
     #     if item == "find":
     #         print_cursor(self.collection.find())
+
+    @property
+    def client(self):
+        return self._client
+
+    @property
+    def uri(self):
+        return self._mongodb_uri
 
     @property
     def database(self):

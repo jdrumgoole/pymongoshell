@@ -1,1 +1,1 @@
-from .shell import Client
+from .shell import Proxy
