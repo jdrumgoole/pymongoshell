@@ -12,6 +12,7 @@ sphinx = "*"
 keyring = "*"
 twine = "*"
 mongodbshell = "*"
+dnspython = "*"
 
 [dev-packages]
 

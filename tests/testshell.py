@@ -1,10 +1,9 @@
 import unittest
-from mongodbshell import Client
+from mongodbshell import mproxy
 
 class TestShell(unittest.TestCase):
 
     def test_client(self):
-        c=Client()
         self.assertTrue(c.is_master())
 
 
