@@ -17,12 +17,13 @@ DESCRIPTION = 'Python tools for using MongoDB with the Python Shell (3.7)'
 URL = 'https://github.com/jdrumgoole/mongodbshell'
 EMAIL = 'joe@joedrumgoole.com'
 AUTHOR = 'Joe Drumgoole'
-REQUIRES_PYTHON = '>=3.6.0'
-VERSION = "0.1a2"
+REQUIRES_PYTHON = '>=3.5.0'
+VERSION = "0.1a3"
 
 # What packages are required for this module to be executed?
 REQUIRED = [
     'pymongo',
+    'dnspython',
 ]
 
 # What packages are optional?

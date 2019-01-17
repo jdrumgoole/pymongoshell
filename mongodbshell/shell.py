@@ -37,6 +37,9 @@ class Proxy:
         self._output_file = None
 
         self._line_numbers = True
+        self._pretty_print = True
+        self._paginate = True
+
         self._overlap = 1
 
     # def __getattr__(self, item):
@@ -89,14 +92,6 @@ class Proxy:
         """
         self._collection = self.database[collection_name]
 
-    @property
-    def overlap(self):
-        return self._overlap
-
-    @overlap.setter
-    def overlap(self, value):
-        self._overlap = value
-
     def is_master(self):
         """
         Run the pymongo is_master command for the current server.
@@ -105,13 +100,17 @@ class Proxy:
         result = self.database.command("ismaster")
         pprint.pprint(result)
 
+    def _cursor_to_line(self, cursor):
+        for i in cursor:
+            yield from self.doc_to_lines(i)
+
     def find(self, *args, **kwargs):
         """
         Run the pymongo find command against the default database and collection
         and paginate the output to the screen.
         """
         # print(f"database.collection: '{self.database.name}.{self.collection.name}'")
-        self.pager(self.collection.find(*args, **kwargs))
+        self.pager(self._cursor_to_line(self.collection.find(*args, **kwargs)))
 
     def find_one(self, *args, **kwargs):
         """
@@ -124,7 +123,7 @@ class Proxy:
     def insert_one(self, *args, **kwargs):
         """
         Run the pymongo insert_one command against the default database and collection
-        and paginate the output to the screen
+        and returne the inserted ID.
         """
         # print(f"database.collection: '{self.database.name}.{self.collection.name}'")
         result = self.collection.insert_one(*args, **kwargs)
@@ -133,38 +132,33 @@ class Proxy:
     def insert_many(self, *args, **kwargs):
         """
         Run the pymongo insert_many command against the default database and collection
-        and paginate the output to the screen
+        and return the list of inserted IDs.
         """
         # print(f"database.collection: '{self.database.name}.{self.collection.name}'")
         result = self.collection.insert_many(*args, **kwargs)
         return result.inserted_ids
+
+    def delete_one(self, *args, **kwargs):
+        """
+        Run the pymongo delete_one command against the default database and collection
+        and return the deleted IDs.
+        """
+        result = self.collection.delete_one(*args, **kwargs)
+        return result.raw_result
+
+    def delete_many(self, *args, **kwargs):
+        """
+        Run the pymongo delete_many command against the default database and collection
+        and return the deleted IDs.
+        """
+        result = self.collection.delete_many(*args, **kwargs)
+        return result.raw_result
 
     def list_database_names(self):
         """
         List all the databases on the default server.
         """
         self.pager(self.client.list_database_names())
-
-    def _get_collections(self):
-        """
-        Internal function to return colletction
-        """
-        for db_name in self.client.list_database_names():
-            db = self.client.get_database(db_name)
-            for col_name in db.list_collection_names():
-                size = db[col_name].g
-                yield f"{db_name}.{col_name}"
-
-    def list_collection_names(self):
-        self.pager(self._get_collections())
-
-    @property
-    def line_numbers(self):
-        return self._line_numbers
-
-    @line_numbers.setter
-    def line_numbers(self, state):
-        self._line_numbers = state
 
     def dbstats(self):
         pprint.pprint(self.database.command("dbstats"))
@@ -180,6 +174,81 @@ class Proxy:
             {"collStats": self._collection_name,
              "scale": scale,
              "verbose": verbose})))
+
+    def _get_collections(self, db_names=None):
+        """
+        Internal function to return all the collections for every database.
+        include a list of db_names to filter the list of collections.
+        """
+        if db_names:
+            db_list = db_names
+        else:
+            db_list = self.client.list_database_names()
+
+        for db_name in db_list:
+            db = self.client.get_database(db_name)
+            for col_name in db.list_collection_names():
+                size = db[col_name].g
+                yield f"{db_name}.{col_name}"
+
+    def list_collection_names(self, database_name):
+        self.pager(self._get_collections())
+
+    @staticmethod
+    def confirm_yes(message):
+        """
+        Return true if user confirms yes. A correct response
+        is 'y' or 'Y'. All other chars will return false.
+        :param message: A string
+        :return: bool.
+        """
+        response = input(f"{message}[ y/Y]:")
+        response.upper()
+        return response == "Y"
+
+    def drop_collection(self, confirm=True):
+        if confirm and self.confirm_yes(f'Drop collection:{self._database_name}.{self._collection_name}'):
+            return self._collection.drop()
+        else:
+            return self._collection.drop()
+
+    def drop_database(self, confirm=True):
+        if confirm and self.confirm_yes(f'Drop database:{self._database_name}'):
+            return self._client.drop_database(self.database)
+        else:
+            return self._client.drop_database(self.database)
+
+    @property
+    def overlap(self):
+        return self._overlap
+
+    @overlap.setter
+    def overlap(self, value):
+        self._overlap = value
+
+    @property
+    def line_numbers(self):
+        return self._line_numbers
+
+    @line_numbers.setter
+    def line_numbers(self, state):
+        self._line_numbers = state
+
+    @property
+    def pretty_print(self):
+        return self._pretty_print
+
+    @pretty_print.setter
+    def pretty_print(self, state):
+        self._pretty_print = state
+
+    @property
+    def paginate(self):
+        return self._paginate
+
+    @paginate.setter
+    def paginate(self, state):
+        self._paginate = state
 
     @property
     def output_file(self):
@@ -213,10 +282,11 @@ class Proxy:
                 line_count += 1
                 if line_count == terminal_lines - self.overlap - 1:
                     line_count = 0
-                    print("Hit Return to continue (q or quit to exit)", end="")
-                    user_input = input()
-                    if user_input.lower().strip() in ["q", "quit", "exit"]:
-                        break
+                    if self.paginate:
+                        print("Hit Return to continue (q or quit to exit)", end="")
+                        user_input = input()
+                        if user_input.lower().strip() in ["q", "quit", "exit"]:
+                            break
 
                 _, terminal_lines = shutil.get_terminal_size(fallback=(80, 24))
             if self._output_file:
@@ -226,17 +296,15 @@ class Proxy:
             if self._output_file:
                 self._output_file.close()
 
-    @staticmethod
-    def doc_format(doc):
-        pprint.pformat(doc)
-
-    @staticmethod
-    def doc_to_lines(doc, format_func=None):
+    def doc_to_lines(self, doc, format_func=None):
         if format_func:
             for l in format_func(doc).splitlines():
                 yield l
-        else:
+        elif self.pretty_print:
             for l in pprint.pformat(doc).splitlines():
+                yield l
+        else:
+            for l in str(doc).splitlines():
                 yield l
 
     def cursor_to_lines(self, cursor, format_func=None):

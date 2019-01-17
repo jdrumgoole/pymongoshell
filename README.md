@@ -184,7 +184,22 @@ Output is also going to 'zipcodes.txt'
 Output will continue to be sent to the `output_file` until the output_file is assigned
 `None` or the empty string ("").
 
+## Options
 
+You can set the following options on the `mproxy` or `Proxy` class objects. 
+
+`proxy.line_numbers` : Bool. True to display line numbers in output, False to 
+remove them.
+
+`proxy.pretty_print` : Bool. True to use `pprint.pprint` to output documents.
+False to write them out as the database returned them.
+
+`proxy.paginate` : Bool. True to paginate output based on screen height. False to just
+send all output directly to console.
+
+`proxy.output_file` : Str. Define a file to write results to. All output is
+appended to the file. Each line is flushed so content is not lost. Set `output_file`
+ton `None` or the emtpy string ("") to stop output going to a file.
 
 
 
