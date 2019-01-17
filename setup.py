@@ -13,12 +13,12 @@ from setuptools import find_packages, setup, Command
 
 # Package meta-data.
 NAME = 'mongodbshell'
-DESCRIPTION = 'Python tools for using MongoDB with the Python Shell (3.7)'
+DESCRIPTION = 'mongodbshell is a class that makes it easy to use MongoDB in the python shell'
 URL = 'https://github.com/jdrumgoole/mongodbshell'
 EMAIL = 'joe@joedrumgoole.com'
 AUTHOR = 'Joe Drumgoole'
 REQUIRES_PYTHON = '>=3.5.0'
-VERSION = "0.1a5"
+VERSION = "0.1a6"
 
 # What packages are required for this module to be executed?
 REQUIRED = [

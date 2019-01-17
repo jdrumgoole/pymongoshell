@@ -1,4 +1,4 @@
-# mongodbshell - A Python utility class for the MongoDB Database
+# mongodbshell : A class that makes it easy to use MongoDB in the python shell
 
 the Python shell is the ideal environment for Python developers to interact
 with MongoDB. However output cursors and interacting with the database requires
