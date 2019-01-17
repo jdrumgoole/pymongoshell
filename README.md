@@ -1,10 +1,33 @@
-# mongodbshell - A utility class for the Python Shell
+# mongodbshell - A Python utility class for the MongoDB Database
 
 the Python shell is the ideal environment for Python developers to interact
 with MongoDB. However output cursors and interacting with the database requires
 a little more boilerplate than is convenient. the `mongodbshell` package 
 provides a set a convenience functions and objects to allow easier
 interaction with MongoDB via the Python interpreter. 
+
+## Installation
+
+you can install the software with pip3 or pipenv. The `mongodbshell` only
+supports Python 3. 
+
+```python
+$ pip3 install mongodbshell
+Collecting mongodbshell
+  Downloading https://files.pythonhosted.org/packages/9f/23/e5478384a52b609353f10a1201742a516c6310fe64ddb62e4362c188f752/mongodbshell-0.1a5.tar.gz
+Requirement already satisfied: pymongo in /Library/Frameworks/Python.framework/Versions/3.7/lib/python3.7/site-packages (from mongodbshell) (3.7.2)
+Collecting dnspython (from mongodbshell)
+  Downloading https://files.pythonhosted.org/packages/ec/d3/3aa0e7213ef72b8585747aa0e271a9523e713813b9a20177ebe1e939deb0/dnspython-1.16.0-py2.py3-none-any.whl (188kB)
+    100% |████████████████████████████████| 194kB 7.3MB/s
+Building wheels for collected packages: mongodbshell
+  Running setup.py bdist_wheel for mongodbshell ... done
+  Stored in directory: /Users/jdrumgoole/Library/Caches/pip/wheels/54/5c/0d/2a430d7b25fb55ddee658aefab9593940d2d0047a6b1fcfc6d
+Successfully built mongodbshell
+Installing collected packages: dnspython, mongodbshell
+Successfully installed dnspython-1.16.0 mongodbshell-0.1a5
+```
+
+## Using the mongodbshell
 
 The easiest way to get started with `mongodbshell` is to import the prebuilt
 `mproxy` object. The `mproxy` object expects to connect to a `mongod` running 
