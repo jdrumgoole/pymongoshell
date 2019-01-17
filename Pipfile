@@ -11,7 +11,6 @@ ipython = "*"
 sphinx = "*"
 keyring = "*"
 twine = "*"
-mongodbshell = "*"
 dnspython = "*"
 tox = "*"
 
