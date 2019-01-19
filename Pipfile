@@ -13,6 +13,7 @@ keyring = "*"
 twine = "*"
 dnspython = "*"
 tox = "*"
+setuptools = "*"
 
 [dev-packages]
 

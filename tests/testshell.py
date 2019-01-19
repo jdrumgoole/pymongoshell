@@ -42,6 +42,12 @@ class TestShell(unittest.TestCase):
             self.assertTrue("{'ismaster': True," in out.getvalue())
             self.assertEqual("", err.getvalue())
 
+    def test_retrywrites(self):
+        p = Proxy(retryWrites=True)
+        with captured_output() as (out, err):
+            p.is_master()
+            self.assertTrue("{'ismaster': True," in out.getvalue())
+
     def test_find_one(self):
 
         with captured_output() as (out, err):

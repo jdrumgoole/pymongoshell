@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+"""
+shell
+============
+
+
+Wrapper for proxy class.
+
+"""
 
 import pymongo
 import pprint
@@ -13,7 +21,10 @@ class Proxy:
     def __init__(self,
                  database_name="test",
                  collection_name="test",
-                 uri="mongodb://localhost:27017"):
+                 host="mongodb://localhost:27017",
+                 *args,
+                 **kwargs):
+
         """
         Creat a new client object with a default database and
         collection.
@@ -21,14 +32,15 @@ class Proxy:
         :param database_name: The name of the database to be opened
         :param collection_name: The collection name to be opened
         :param mongodb_uri: A properly formatted MongoDB URI
+        :param *args, *kwargs : Passed through to MongoClient
 
         >>> from mongodbshell import mproxy
         >>> mproxy.database = "demo"
         >>> mproxy.collection = "zipcodes"
 
         """
-        self._mongodb_uri = uri
-        self._client = pymongo.MongoClient(self._mongodb_uri)
+        self._mongodb_uri = host
+        self._client = pymongo.MongoClient(host=self._mongodb_uri, *args, **kwargs)
         self._database_name = database_name
         self._collection_name = collection_name
         self._database = self._client[self._database_name]
@@ -41,10 +53,6 @@ class Proxy:
         self._paginate = True
 
         self._overlap = 1
-
-    # def __getattr__(self, item):
-    #     if item == "find":
-    #         print_cursor(self.collection.find())
 
     @property
     def client(self):
@@ -78,8 +86,7 @@ class Proxy:
     @property
     def collection(self):
         """
-        :return: Return the default collection object associated with the Proxy
-        database
+        Return the default collection object associated with the `Proxy` object.
         """
         return self._collection
 
@@ -166,6 +173,7 @@ class Proxy:
     def collstats(self, scale=1024, verbose=False):
         """
         see https://docs.mongodb.com/v4.0/reference/command/collStats/
+
         :param scale: Scale at which to report sizes
         :param verbose: used for extended report on legacy MMAPV1 storage engine
         :return: JSON doc with stats
