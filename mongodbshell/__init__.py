@@ -2,7 +2,13 @@
 MongoDBShell
 ===============
 a module to allow more natural interaction with MongoDB via
-the Python shell. To use just `from mongodbshell import mongo_client`.
+the Python shell. Install using `pip3` (`MongoDBShell only supports Python 3).
+
+```python
+$pip3 install mongodbshell
+```
+
+To use just `from mongodbshell import mongo_client`.
 This will give you a prebuilt :py:class:`~MongoDBShell.Client` object.
 
 """

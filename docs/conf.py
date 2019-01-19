@@ -20,7 +20,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'MongoDBShell'
-copyright = '2019, Joe Drumgoole'
+#copyright = '2019, Joe Drumgoole'
 author = 'Joe Drumgoole'
 
 # The short X.Y version
@@ -75,7 +75,7 @@ language = None
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = None
+pygments_style = emacs
 
 
 # -- Options for HTML output -------------------------------------------------
