@@ -5,7 +5,7 @@ from io import StringIO
 from datetime import datetime
 import pymongo
 
-from mongodbshell import mproxy, Proxy
+from mongodbshell import mongo_client, Client
 
 
 @contextmanager
@@ -22,28 +22,27 @@ def captured_output():
 class TestShell(unittest.TestCase):
 
     def setup(self):
-        mproxy.drop_collection(confirm=False)
-        mproxy.drop_database(confirm=False)
+        mongo_client.drop_collection(confirm=False)
+        mongo_client.drop_database(confirm=False)
 
     def tearDown(self):
-        mproxy.drop_collection(confirm=False)
-        mproxy.drop_database(confirm=False)
+        mongo_client.drop_collection(confirm=False)
+        mongo_client.drop_database(confirm=False)
 
-    def test_proxy(self):
+    def test_Client(self):
         with captured_output() as (out, err):
-            mproxy.client
             self.assertEqual(pymongo.MongoClient(),
-                             mproxy.client)
+                             mongo_client.client)
             self.assertEqual("", err.getvalue())
 
     def test_ismaster(self):
         with captured_output() as (out, err):
-            mproxy.is_master()
+            mongo_client.is_master()
             self.assertTrue("{'ismaster': True," in out.getvalue())
             self.assertEqual("", err.getvalue())
 
     def test_retrywrites(self):
-        p = Proxy(retryWrites=True)
+        p = Client(retryWrites=True)
         with captured_output() as (out, err):
             p.is_master()
             self.assertTrue("{'ismaster': True," in out.getvalue())
@@ -51,43 +50,45 @@ class TestShell(unittest.TestCase):
     def test_find_one(self):
 
         with captured_output() as (out, err):
-            proxy = Proxy(database_name="demo",
-                          collection_name="zipcodes")
+            client = Client(database_name="demo",
+                            collection_name="zipcodes")
 
-            proxy.line_numbers = False
-            proxy.find_one()
+            client.line_numbers = False
+            client.find_one()
             self.assertTrue('AGAWAM' in out.getvalue())
             self.assertEqual("", err.getvalue())
 
     def test_find(self):
         with captured_output() as (out, err):
-            proxy = Proxy(database_name="demo",
+            client = Client(database_name="demo",
                           collection_name="zipcodes")
-            proxy.pretty_print = False
-            proxy.paginate = False
-            proxy.line_numbers = False
-            proxy.find(limit=50)
+            client.pretty_print = False
+            client.paginate = False
+            client.line_numbers = False
+            client.find(limit=50)
             self.assertEqual(len(out.getvalue().splitlines()), 50)
             self.assertTrue('01105' in out.getvalue())
             self.assertEqual("", err.getvalue())
 
     def test_insert_one(self):
         with captured_output() as (out, err):
-            proxy = Proxy()
+            client = Client()
             now = datetime.utcnow()
-            proxy.insert_one({"ts": now})
-            self.assertTrue(proxy.collection.find_one({"ts": now}))
-            proxy.delete_one({"ts": now})
-            self.assertFalse(proxy.collection.find_one({"ts": now}))
+            client.insert_one({"ts": now})
+            self.assertTrue(client.collection.find_one({"ts": now}))
+            client.delete_one({"ts": now})
+            self.assertFalse(client.collection.find_one({"ts": now}))
 
     def test_insert_many(self):
         with captured_output() as (out, err):
-            proxy = Proxy()
+            client = Client()
             many = [{"a": 1}, {"a": 1}, {"a": 3}]
-            proxy.insert_many(many)
-            self.assertTrue(proxy.collection.find_one({"a": 3}))
-            proxy.delete_many({"a": 1})
-            proxy.delete_one({"a": 3})
-            self.assertFalse(proxy.collection.find_one({"a": 3}))
+            client.insert_many(many)
+            self.assertTrue(client.collection.find_one({"a": 3}))
+            client.delete_many({"a": 1})
+            client.delete_one({"a": 3})
+            self.assertFalse(client.collection.find_one({"a": 3}))
+
+
 if __name__ == '__main__':
     unittest.main()
