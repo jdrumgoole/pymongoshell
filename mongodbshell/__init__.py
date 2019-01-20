@@ -1,24 +1,14 @@
+#!/usr/bin/env python3
 """
 MongoDBShell
 ===============
 a module to allow more natural interaction with MongoDB via
 the Python shell. Install using `pip3` (`MongoDBShell` only supports Python 3).
 
-```python
-$pip3 install mongodbshell
-```
+``$pip3 install mongodbshell``
 
-To use just `from mongodbshell import mongo_client`.
+To use just ``from mongodbshell import mongo_client``.
 This will give you a prebuilt :py:class:`~MongoDBShell.Client` object.
-
-"""
-#!/usr/bin/env python3
-"""
-shell
-============
-
-
-Wrapper for proxy class.
 
 """
 
@@ -29,7 +19,7 @@ import shutil
 
 class Client:
     """
-    Simple command line proxy for use in the Python shell.
+    Simple command line Client proxy for use in the Python shell.
     """
 
     def __init__(self,
