@@ -30,7 +30,7 @@ Successfully installed dnspython-1.16.0 mongodbshell-0.1a5
 ## Using the mongodbshell
 
 The easiest way to get started with `mongodbshell` is to import the prebuilt
-`mproxy` object. The `mproxy` object expects to connect to a `mongod` running 
+`mongo_client` object. The `mongo_client` object expects to connect to a `mongod` running 
 locally on port 27017 (it uses the [MongoDB URI](https://docs.mongodb.com/manual/reference/connection-string/) 
 `mongodb://localhost:27017` by default)
 
@@ -39,10 +39,10 @@ $ python3
 Python 3.6.5 (v3.6.5:f59c0932b4, Mar 28 2018, 03:03:55)
 [GCC 4.2.1 (Apple Inc. build 5666) (dot 3)] on darwin
 Type "help", "copyright", "credits" or "license" for more information.
->>> from mongodbshell import mproxy
->>> mproxy
-Proxy('test', 'test', 'mongodb://localhost:27017')
->>> mproxy.list_database_names()
+>>> from mongodbshell import mongo_client
+>>> mongo_client
+Client('test', 'test', 'mongodb://localhost:27017')
+>>> monggo_client.list_database_names()
 1    config
 2    test
 3    local
@@ -51,13 +51,13 @@ Proxy('test', 'test', 'mongodb://localhost:27017')
 ```
 Each proxy object has host of standard properties:
 ```python
->>> mproxy.client
+>>> mongo_client.client
 MongoClient(host=['localhost:27017'], document_class=dict, tz_aware=False, connect=True)
->>> mproxy.database
+>>> mongo_client.database
 Database(MongoClient(host=['localhost:27017'], document_class=dict, tz_aware=False, connect=True), 'test')
->>> mproxy.collection
+>>> mongo_client.collection
 Collection(Database(MongoClient(host=['localhost:27017'], document_class=dict, tz_aware=False, connect=True), 'test'), 'test')
->>> mproxy.uri
+>>> mongo_client.uri
 'mongodb://localhost:27017'
 >>>
 ```
@@ -65,7 +65,7 @@ Collection(Database(MongoClient(host=['localhost:27017'], document_class=dict, t
 There are also convenience functions for the most popular operations:
 
 ```python
->>> mproxy.is_master()
+>>> mongo_client.is_master()
 {'ismaster': True,
  'localTime': datetime.datetime(2019, 1, 16, 15, 15, 41, 87000),
  'logicalSessionTimeoutMinutes': 30,
@@ -76,9 +76,9 @@ There are also convenience functions for the most popular operations:
  'minWireVersion': 0,
  'ok': 1.0,
  'readOnly': False}
->>> mproxy.insert_one({"name" : "Joe Drumgoole", "twitter_handle" : "@jdrumgoole"})
+>>> mongo_client.insert_one({"name" : "Joe Drumgoole", "twitter_handle" : "@jdrumgoole"})
 ObjectId('5c3f4f2fc3b498d6674b08f0')
->>> mproxy.find_one( {"name" : "Joe Drumgoole"})
+>>> mongo_client.find_one( {"name" : "Joe Drumgoole"})
 1    {'_id': ObjectId('5c3f4b04c3b498d4a1c6ce22'),
 2     'name': 'Joe Drumgoole',
 3     'twitter_handle': '@jdrumgoole'}
@@ -90,14 +90,14 @@ Line numbers are added to output by default. You can turn off line numbers by
 setting the `line_numbers` flag to false.
 
 ```python
->>> mproxy.insert_one({"name" : "Joe Drumgoole", "twitter_handle" : "@jdrumgoole"})
+>>> mongo_client.insert_one({"name" : "Joe Drumgoole", "twitter_handle" : "@jdrumgoole"})
 ObjectId('5c3f4f2fc3b498d6674b08f0')
->>> mproxy.find_one( {"name" : "Joe Drumgoole"})
+>>> mongo_client.find_one( {"name" : "Joe Drumgoole"})
 1    {'_id': ObjectId('5c3f4b04c3b498d4a1c6ce22'),
 2     'name': 'Joe Drumgoole',
 3     'twitter_handle': '@jdrumgoole'}
->>> mproxy.line_numbers = False                      # Turn off line numbers
->>> mproxy.find_one( {"name" : "Joe Drumgoole"})
+>>> mongo_client.line_numbers = False                      # Turn off line numbers
+>>> mongo_client.find_one( {"name" : "Joe Drumgoole"})
 {'_id': ObjectId('5c3f4b04c3b498d4a1c6ce22'),
  'name': 'Joe Drumgoole',
  'twitter_handle': '@jdrumgoole'}
@@ -142,7 +142,7 @@ or explicitly call `next()` on each cursor item.
 
 This is tedious and becomes even more so when the objects are large enough to
 scroll off the screen. This is not a problem with the `mongodbshell` as the
-`Proxy` class and the built in `mproxy` object automatically handle 
+`Proxy` class and the built in `mongo_client` object automatically handle 
 pretty printing and paginating outing. 
 
 ```python
@@ -209,18 +209,18 @@ Output will continue to be sent to the `output_file` until the output_file is as
 
 ## Options
 
-You can set the following options on the `mproxy` or `Proxy` class objects. 
+You can set the following options on the `mongo_client` or `Client` class objects. 
 
-`proxy.line_numbers` : Bool. True to display line numbers in output, False to 
+`Client.line_numbers` : Bool. True to display line numbers in output, False to 
 remove them.
 
-`proxy.pretty_print` : Bool. True to use `pprint.pprint` to output documents.
+`Client.pretty_print` : Bool. True to use `pprint.pprint` to output documents.
 False to write them out as the database returned them.
 
-`proxy.paginate` : Bool. True to paginate output based on screen height. False to just
+`Client.paginate` : Bool. True to paginate output based on screen height. False to just
 send all output directly to console.
 
-`proxy.output_file` : Str. Define a file to write results to. All output is
+`Client.output_file` : Str. Define a file to write results to. All output is
 appended to the file. Each line is flushed so content is not lost. Set `output_file`
 ton `None` or the emtpy string ("") to stop output going to a file.
 
