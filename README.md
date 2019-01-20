@@ -1,6 +1,6 @@
-# mongodbshell : A class that makes it easy to use MongoDB in the python shell
+# mongodbshell : A module that makes it easy to use MongoDB in the python shell
 
-the Python shell is the ideal environment for Python developers to interact
+The Python shell is the ideal environment for Python developers to interact
 with MongoDB. However output cursors and interacting with the database requires
 a little more boilerplate than is convenient. the `mongodbshell` package 
 provides a set a convenience functions and objects to allow easier
