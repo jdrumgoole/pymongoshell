@@ -49,7 +49,7 @@ Client('test', 'test', 'mongodb://localhost:27017')
 4    admin
 >>>
 ```
-Each proxy object has host of standard properties:
+Each Client object has host of standard properties:
 ```python
 >>> mongo_client.client
 MongoClient(host=['localhost:27017'], document_class=dict, tz_aware=False, connect=True)
@@ -105,12 +105,12 @@ ObjectId('5c3f4f2fc3b498d6674b08f0')
 ```
 ## Connecting to a specific MongoDB URI
 
-You can connect to a different database by using the `Proxy` class. Here is an
+You can connect to a different database by using the `Client` class. Here is an
 example connection to a [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) hosted datbase. 
 
 ```python
->>> from mongodbshell import Proxy
->>> atlas=Proxy(uri="mongodb+srv://readonly:readonly@demodata-rgl39.mongodb.net/test?retryWrites=true", database="demo", collection="zipcodes")
+>>> from mongodbshell import Client
+>>> atlas=Client(uri="mongodb+srv://readonly:readonly@demodata-rgl39.mongodb.net/test?retryWrites=true", database="demo", collection="zipcodes")
 >>> atlas.find_one()
 1    {'_id': '01069',
 2     'city': 'PALMER',
@@ -142,7 +142,7 @@ or explicitly call `next()` on each cursor item.
 
 This is tedious and becomes even more so when the objects are large enough to
 scroll off the screen. This is not a problem with the `mongodbshell` as the
-`Proxy` class and the built in `mongo_client` object automatically handle 
+`Client` class and the built in `mongo_client` object automatically handle 
 pretty printing and paginating outing. 
 
 ```python
@@ -167,8 +167,8 @@ Pagination will dynamically adjust to screen height.
 
 ## Outputting to a file
 
-The `Proxy` class can send output to a file by setting the `output_file` property
-on the `Proxy` class. 
+The `Client` class can send output to a file by setting the `output_file` property
+on the `Client` class. 
 
 ```python
 >>> atlas.output_file="zipcodes.txt"
