@@ -17,8 +17,8 @@ DESCRIPTION = 'mongodbshell is a class that makes it easy to use MongoDB in the 
 URL = 'https://github.com/jdrumgoole/mongodbshell'
 EMAIL = 'joe@joedrumgoole.com'
 AUTHOR = 'Joe Drumgoole'
-REQUIRES_PYTHON = '>=3.5.0'
-VERSION = "0.2a2"
+REQUIRES_PYTHON = '>=3.6.0'
+VERSION = "0.2a3"
 
 # What packages are required for this module to be executed?
 REQUIRED = [

@@ -75,6 +75,7 @@ class Client:
     @property
     def database(self):
         """
+        Assign to this property to set the current default database.
         :return: Return the default database object associated with the Proxy
         """
         return self._database
@@ -90,6 +91,7 @@ class Client:
     @property
     def collection(self):
         """
+        Assign to `collection` to reset the current default collection.
         Return the default collection object associated with the `Proxy` object.
         """
         return self._collection

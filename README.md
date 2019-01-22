@@ -27,6 +27,8 @@ Installing collected packages: dnspython, mongodbshell
 Successfully installed dnspython-1.16.0 mongodbshell-0.1a5
 ```
 
+A complete set of API docs can be found on[read the docs](https://mongodbshell.readthedocs.io/en/latest/)
+
 ## Using the mongodbshell
 
 The easiest way to get started with `mongodbshell` is to import the prebuilt
