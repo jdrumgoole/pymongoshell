@@ -9,6 +9,7 @@ test: get_zipcode_data
 	nosetests
 
 prod_build:clean test build
+	git tag -t 
 	twine upload --verbose --repository-url https://upload.pypi.org/legacy/ dist/* -u jdrumgoole
 
 test_build:test build

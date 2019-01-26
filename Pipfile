@@ -14,6 +14,7 @@ twine = "*"
 dnspython = "*"
 tox = "*"
 setuptools = "*"
+sphinx-rtd-theme = "*"
 
 [dev-packages]
 

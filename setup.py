@@ -10,15 +10,16 @@ import sys
 from shutil import rmtree
 
 from setuptools import find_packages, setup, Command
+import version
 
 # Package meta-data.
-NAME = 'mongodbshell'
+NAME = version.NAME
 DESCRIPTION = 'mongodbshell is a class that makes it easy to use MongoDB in the python shell'
 URL = 'https://github.com/jdrumgoole/mongodbshell'
 EMAIL = 'joe@joedrumgoole.com'
 AUTHOR = 'Joe Drumgoole'
 REQUIRES_PYTHON = '>=3.6.0'
-VERSION = "0.2a3"
+VERSION = version.VERSION
 
 # What packages are required for this module to be executed?
 REQUIRED = [
