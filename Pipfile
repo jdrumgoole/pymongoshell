@@ -15,6 +15,7 @@ dnspython = "*"
 tox = "*"
 setuptools = "*"
 sphinx-rtd-theme = "*"
+semvermanager = "*"
 
 [dev-packages]
 
