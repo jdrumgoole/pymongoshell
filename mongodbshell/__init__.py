@@ -167,6 +167,13 @@ class Client:
         result = self.collection.delete_many(*args, **kwargs)
         return result.raw_result
 
+    def count_documents(self, filter={},  *args, **kwargs):
+        """
+        Count all the documents in a collection accurately
+        """
+        result = self.collection.count_documents(filter, *args, **kwargs)
+        return result
+
     def list_database_names(self):
         """
         List all the databases on the default server.

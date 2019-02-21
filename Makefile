@@ -5,8 +5,41 @@
 #
 
 ATLAS_HOSTS="demodata-shard-0/demodata-shard-00-00-rgl39.mongodb.net:27017,demodata-shard-00-01-rgl39.mongodb.net:27017,demodata-shard-00-02-rgl39.mongodb.net:27017"
-test: get_zipcode_data
+
+start_server:
+	mkdir -p data
+	rm -rf mongod.log
+	mongod --dbpath ./data --pidfilepath mongod.pid --logpath mongod.log &
+
+stop_server:
+	@if [ -f "mongod.pid" ]; then\
+		kill `cat mongod.pid`;\
+		echo "killing process `cat mongod.pid`";\
+		rm mongod.pid;\
+	fi;
+
+test: start_server get_zipcode_data
 	nosetests
+
+patch:
+	semvermgr --bump patch setup.py
+	semvermgr --bump patch --label release docs/conf.py
+
+minor:
+	semvermgr --bump minor setup.py
+	semvermgr --bump minor --label release docs/conf.py
+
+major:
+	semvermgr --bump major setup.py
+	semvermgr --bump major --label release docs/conf.py
+
+tag:
+	semvermgr --bump tag setup.py
+	semvermgr --bump tag --label release docs/conf.py
+
+tag_version:
+	semvermgr --bump tag_version setup.py
+	semvermgr --bump tag_version --label release docs/conf.py
 
 prod_build:clean test build
 	git tag -t 
@@ -26,6 +59,17 @@ get_zipcode_data:
 		mongodump --host ${ATLAS_HOSTS} --ssl --username readonly --password readonly --authenticationDatabase admin --db demo --collection zipcodes;\
 		mongorestore --drop;\
 	fi
+
+push:
+	git add -u
+	git commit -m"WIP"
+	git push
+
+release: test tox push
+	git add -u
+	git commit -m"Checkin for release to pypi"
+	git push
+	python3 setup.py upload
 
 tox:
 	tox
