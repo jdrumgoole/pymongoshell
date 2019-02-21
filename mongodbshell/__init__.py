@@ -334,7 +334,7 @@ class Client:
                f"collection : '{self.collection.name}'"
 
     def __repr__(self):
-        return f"Proxy('{self.database.name}', '{self.collection.name}', '{self.uri}')"
+        return f"mongodbshell.Client('{self.database.name}', '{self.collection.name}', '{self.uri}')"
 
 
 mongo_client = Client()
