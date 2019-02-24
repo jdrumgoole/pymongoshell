@@ -15,6 +15,17 @@ This will give you a prebuilt :py:class:`~MongoDBShell.Client` object.
 import pymongo
 import pprint
 import shutil
+import os
+
+
+class ShellError(ValueError):
+    pass
+
+
+if os.platform == "Windows":
+    db_name_excluded_chars = r'/\. "$*<>:|?'
+else:
+    db_name_excluded_chars = r'/\. "$'
 
 
 class Client:
@@ -38,7 +49,7 @@ class Client:
         :param mongodb_uri: A properly formatted MongoDB URI
         :param *args, *kwargs : Passed through to MongoClient
 
-        >>> from mongodbshell import mproxy
+        >>> from mongodbshell import Client
         >>> mproxy.database = "demo"
         >>> mproxy.collection = "zipcodes"
 
@@ -56,7 +67,7 @@ class Client:
         self._pretty_print = True
         self._paginate = True
 
-        self._overlap = 1
+        self._overlap = 0
 
     @property
     def client(self):
@@ -86,7 +97,16 @@ class Client:
         Set the default database for this Proxy object.
         :param database_name: A string naming the database
         """
-        self._database = self.client[database_name]
+        db, dot, col = database_name.partition("")
+
+        if db:
+
+            self._database = self.client[database_name]
+        else:
+            raise ShellError(f"'{database_name}' is not a valid database name")
+
+        if col:
+            self._collection = self._database[col]
 
     @property
     def collection(self):
@@ -103,6 +123,8 @@ class Client:
         object.
         :param collection_name:
         """
+
+        i
         self._collection = self.database[collection_name]
 
     def is_master(self):
@@ -241,6 +263,10 @@ class Client:
 
     @property
     def overlap(self):
+        """
+        Get and set the line_numbers boolean
+        :return: `line_numbers` (True|False)
+        """
         return self._overlap
 
     @overlap.setter
@@ -249,6 +275,10 @@ class Client:
 
     @property
     def line_numbers(self):
+        """
+        Get and set the line_numbers boolean
+        :return: `line_numbers` (True|False)
+        """
         return self._line_numbers
 
     @line_numbers.setter
@@ -257,6 +287,10 @@ class Client:
 
     @property
     def pretty_print(self):
+        """
+        Get and set the pretty print boolean
+        :return: `pretty_print` (True|False)
+        """
         return self._pretty_print
 
     @pretty_print.setter
@@ -269,14 +303,26 @@ class Client:
 
     @paginate.setter
     def paginate(self, state):
+        """
+        :param state: True, turn on pagination
+        :return:
+        """
         self._paginate = state
 
     @property
     def output_file(self):
+        """
+        :return: The name of the output file
+        """
         return self._output_filename
 
     @output_file.setter
     def output_file(self, filename):
+        """
+
+        :param filename: file to output `pager` output to.
+        :return:
+        """
         if not filename or filename == "":
             self._output_filename = None
             self._output_file = None
@@ -284,6 +330,30 @@ class Client:
             self._output_filename = filename
 
     def pager(self, lines):
+        """
+        Pager is a function that outputs lines to a terminal. It uses
+        `shutil.get_terminal_size` to determine the height of the terminal.
+        It expects an iterator that returns a line at a time and those lines
+        should be terminated by a valid newline sequence.
+
+        Behaviour is controlled by a number of external class properties.
+
+        `paginate` : Is on by default and triggers pagination. Without `paginate`
+        all output is written straight to the screen.
+
+        `output_file` : By assigning a name to this property we can ensure that
+        all output is sent to the corresponding file. Prompts are not output.
+
+        `pretty_print` : If this is set (default is on) then all output is
+        pretty printed with `pprint`. If it is off then the output is just
+        written to the screen.
+
+        `overlap` : The number of lines to overlap between one page and the
+        next.
+
+        :param lines:
+        :return:
+        """
         try:
             _, terminal_lines = shutil.get_terminal_size(fallback=(80, 24))
             line_count = 0
