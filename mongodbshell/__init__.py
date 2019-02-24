@@ -28,6 +28,9 @@ else:
     db_name_excluded_chars = r'/\. "$'
 
 
+class MongoDBShellError(ValueError):
+    pass
+
 class Client:
     """
     Simple command line Client proxy for use in the Python shell.
@@ -217,6 +220,13 @@ class Client:
             {"collStats": self._collection_name,
              "scale": scale,
              "verbose": verbose})))
+
+    def __getattr__(self, item):
+        print("its me")
+        if hasattr(self._collection, item):
+            return getattr(self.collection, item)
+        else:
+            raise MongoDBShellError(f"No such item {item} in PyMongo collection object")
 
     def _get_collections(self, db_names=None):
         """
