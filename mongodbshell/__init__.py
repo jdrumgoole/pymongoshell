@@ -8,21 +8,21 @@ the Python shell. Install using `pip3` (`MongoDBShell` only supports Python 3).
 ``$pip3 install mongodbshell``
 
 To use just ``from mongodbshell import mongo_client``.
-This will give you a prebuilt :py:class:`~MongoDBShell.Client` object.
+This will give you a prebuilt :py:class:`~MongoDBShell.MongoDB` object.
 
 """
 
 import pymongo
 import pprint
 import shutil
-import os
+import sys
 
 
 class ShellError(ValueError):
     pass
 
 
-if os.platform == "Windows":
+if sys.platform == "Windows":
     db_name_excluded_chars = r'/\. "$*<>:|?'
 else:
     db_name_excluded_chars = r'/\. "$'
@@ -31,9 +31,10 @@ else:
 class MongoDBShellError(ValueError):
     pass
 
-class Client:
+
+class MongoDB:
     """
-    Simple command line Client proxy for use in the Python shell.
+    Simple command line MongoDB proxy for use in the Python shell.
     """
 
     def __init__(self,
@@ -52,9 +53,18 @@ class Client:
         :param mongodb_uri: A properly formatted MongoDB URI
         :param *args, *kwargs : Passed through to MongoClient
 
-        >>> from mongodbshell import Client
-        >>> mproxy.database = "demo"
-        >>> mproxy.collection = "zipcodes"
+        >>> from mongodbshell import MongoDB
+        >>> client = MongoDB()
+        >>> client.database = "demo"
+        >>> client.collection = "zipcodes"
+        >>> client.collection = "demo.zipcodes"
+        >>> client.collection = "db$.test"
+        Traceback (most recent call last):
+          File "<stdin>", line 1, in <module>
+          File "/Users/jdrumgoole/GIT/mongodbshell/mongodbshell/__init__.py", line 152, in collection
+            else:
+        mongodbshell.ShellError: 'db$' is not a valid database name
+        >>>
 
         """
         self._mongodb_uri = host
@@ -71,6 +81,21 @@ class Client:
         self._paginate = True
 
         self._overlap = 0
+
+    @staticmethod
+    def valid_database_name(name):
+        """
+        Check that the name for a database has no illegal
+        characters
+        :param name: the name of the database
+        :return: True if the name is valid
+        """
+
+        for char in db_name_excluded_chars:
+            if char in name:
+                return None
+
+        return name
 
     @property
     def client(self):
@@ -100,35 +125,43 @@ class Client:
         Set the default database for this Proxy object.
         :param database_name: A string naming the database
         """
-        db, dot, col = database_name.partition("")
-
-        if db:
-
+        if database_name and MongoDB.valid_database_name(database_name):
             self._database = self.client[database_name]
         else:
             raise ShellError(f"'{database_name}' is not a valid database name")
-
-        if col:
-            self._collection = self._database[col]
 
     @property
     def collection(self):
         """
         Assign to `collection` to reset the current default collection.
-        Return the default collection object associated with the `Proxy` object.
+        Return the default collection object associated with the `MongoDB` object.
         """
         return self._collection
 
     @collection.setter
-    def collection(self, collection_name):
+    def collection(self, db_collection_name):
         """
-        Set the default collection for the database associated with the Proxy
-        object.
-        :param collection_name:
+        Set the default collection for the database associated with the `MongoDB`
+        object. The user can specify a database and a collection by using a dot
+        notation <database_name.collection_name>.
+        :param db_collection_name: the name of the database and collection
         """
 
-        i
-        self._collection = self.database[collection_name]
+        if "." in db_collection_name:
+            database_name, dot, collection_name = db_collection_name.partition(".")
+            if self.valid_database_name(database_name):
+                if self.valid_database_name(collection_name):
+                    self._database = self._client[database_name]
+                    self._collection = self._database[collection_name]
+                else:
+                    raise ShellError(f"'{collection_name}' is not a valid collection name")
+            else:
+                raise ShellError(f"'{database_name}' is not a valid database name")
+        else:
+            if self.valid_database_name(db_collection_name):
+                self._collection = self._database[db_collection_name]
+            else:
+                raise ShellError(f"'{db_collection_name}' is not a valid collection name")
 
     def is_master(self):
         """
@@ -421,7 +454,7 @@ class Client:
                f"collection : '{self.collection.name}'"
 
     def __repr__(self):
-        return f"mongodbshell.Client('{self.database.name}', '{self.collection.name}', '{self.uri}')"
+        return f"mongodbshell.MongoDB('{self.database.name}', '{self.collection.name}', '{self.uri}')"
 
 
-mongo_client = Client()
+mongo_client = MongoDB()

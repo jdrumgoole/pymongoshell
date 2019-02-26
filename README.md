@@ -43,7 +43,7 @@ Python 3.6.5 (v3.6.5:f59c0932b4, Mar 28 2018, 03:03:55)
 Type "help", "copyright", "credits" or "license" for more information.
 >>> from mongodbshell import mongo_client
 >>> mongo_client
-Client('test', 'test', 'mongodb://localhost:27017')
+MongoDB('test', 'test', 'mongodb://localhost:27017')
 >>> monggo_client.list_database_names()
 1    config
 2    test
@@ -51,7 +51,7 @@ Client('test', 'test', 'mongodb://localhost:27017')
 4    admin
 >>>
 ```
-Each Client object has host of standard properties:
+Each MongoDB object has host of standard properties:
 ```python
 >>> mongo_client.client
 MongoClient(host=['localhost:27017'], document_class=dict, tz_aware=False, connect=True)
@@ -107,12 +107,12 @@ ObjectId('5c3f4f2fc3b498d6674b08f0')
 ```
 ## Connecting to a specific MongoDB URI
 
-You can connect to a different database by using the `Client` class. Here is an
+You can connect to a different database by using the `MongoDB` class. Here is an
 example connection to a [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) hosted datbase. 
 
 ```python
 >>> from mongodbshell import Client
->>> atlas=Client(uri="mongodb+srv://readonly:readonly@demodata-rgl39.mongodb.net/test?retryWrites=true", database="demo", collection="zipcodes")
+>>> atlas=MongoDB(uri="mongodb+srv://readonly:readonly@demodata-rgl39.mongodb.net/test?retryWrites=true", database="demo", collection="zipcodes")
 >>> atlas.find_one()
 1    {'_id': '01069',
 2     'city': 'PALMER',
@@ -144,7 +144,7 @@ or explicitly call `next()` on each cursor item.
 
 This is tedious and becomes even more so when the objects are large enough to
 scroll off the screen. This is not a problem with the `mongodbshell` as the
-`Client` class and the built in `mongo_client` object automatically handle 
+`MongoDB` class and the built in `mongo_client` object automatically handle 
 pretty printing and paginating outing. 
 
 ```python
@@ -169,8 +169,8 @@ Pagination will dynamically adjust to screen height.
 
 ## Outputting to a file
 
-The `Client` class can send output to a file by setting the `output_file` property
-on the `Client` class. 
+The `MongoDB` class can send output to a file by setting the `output_file` property
+on the `MongoDB` class. 
 
 ```python
 >>> atlas.output_file="zipcodes.txt"
@@ -211,18 +211,18 @@ Output will continue to be sent to the `output_file` until the output_file is as
 
 ## Options
 
-You can set the following options on the `mongo_client` or `Client` class objects. 
+You can set the following options on the `mongo_client` or `MongoDB` class objects. 
 
-`Client.line_numbers` : Bool. True to display line numbers in output, False to 
+`MongoDB.line_numbers` : Bool. True to display line numbers in output, False to 
 remove them.
 
-`Client.pretty_print` : Bool. True to use `pprint.pprint` to output documents.
+`MongoDB.pretty_print` : Bool. True to use `pprint.pprint` to output documents.
 False to write them out as the database returned them.
 
-`Client.paginate` : Bool. True to paginate output based on screen height. False to just
+`MongoDB.paginate` : Bool. True to paginate output based on screen height. False to just
 send all output directly to console.
 
-`Client.output_file` : Str. Define a file to write results to. All output is
+`MongoDB.output_file` : Str. Define a file to write results to. All output is
 appended to the file. Each line is flushed so content is not lost. Set `output_file`
 ton `None` or the emtpy string ("") to stop output going to a file.
 

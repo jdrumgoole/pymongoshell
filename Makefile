@@ -7,15 +7,27 @@
 ATLAS_HOSTS="demodata-shard-0/demodata-shard-00-00-rgl39.mongodb.net:27017,demodata-shard-00-01-rgl39.mongodb.net:27017,demodata-shard-00-02-rgl39.mongodb.net:27017"
 
 start_server:
-	mkdir -p data
-	rm -rf mongod.log
-	mongod --dbpath ./data --pidfilepath mongod.pid --logpath mongod.log &
+	@mkdir -p data
+	@rm -rf mongod.log
+	@if [ -f "/tmp/mongod.pid" ]; then\
+		echo "mongod is already running on port `cat /tmp/mongod.pid`";\
+	else\
+		echo "starting mongod";\
+		mongod --dbpath ./data --fork --pidfilepath /tmp/mongod.pid --logpath mongod.log 2>&1 > /dev/null;\
+		echo "Process ID: `cat /tmp/mongod.pid`";\
+	fi;
+#		echo "mongod is already running on port `cat /tmp/mongod.pid`"\
+#	else\
+
+
+#		echo "Process ID: `cat /tmp/mongod.pid`"\
+#	fi;
 
 stop_server:
-	@if [ -f "mongod.pid" ]; then\
-		kill `cat mongod.pid`;\
-		echo "killing process `cat mongod.pid`";\
-		rm mongod.pid;\
+	@if [ -f "/tmp/mongod.pid" ]; then\
+		kill `cat /tmp/mongod.pid`;\
+		echo "killing mongod process `cat /tmp/mongod.pid`";\
+		rm /tmp/mongod.pid;\
 	fi;
 
 test: start_server get_zipcode_data
