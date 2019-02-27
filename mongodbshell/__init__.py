@@ -70,9 +70,10 @@ class MongoDB:
         self._mongodb_uri = host
         self._client = pymongo.MongoClient(host=self._mongodb_uri, *args, **kwargs)
         self._database_name = database_name
-        self._collection_name = collection_name
         self._database = self._client[self._database_name]
-        self._collection = self._database[self._collection_name]
+        self._set_collection(collection_name)
+        #
+        # self._collection = self._database[self._collection_name]
         self._output_filename = None
         self._output_file = None
 
@@ -130,6 +131,23 @@ class MongoDB:
         else:
             raise ShellError(f"'{database_name}' is not a valid database name")
 
+    def _set_collection(self, name):
+        if "." in name:
+            database_name, dot, collection_name = name.partition(".")
+            if self.valid_database_name(database_name):
+                if self.valid_database_name(collection_name):
+                    self._database = self._client[database_name]
+                    self._collection = self._database[collection_name]
+                else:
+                    raise ShellError(f"'{collection_name}' is not a valid collection name")
+            else:
+                raise ShellError(f"'{database_name}' is not a valid database name")
+        else:
+            if self.valid_database_name(name):
+                self._collection = self._database[name]
+            else:
+                raise ShellError(f"'{name}' is not a valid collection name")
+
     @property
     def collection(self):
         """
@@ -147,21 +165,23 @@ class MongoDB:
         :param db_collection_name: the name of the database and collection
         """
 
-        if "." in db_collection_name:
-            database_name, dot, collection_name = db_collection_name.partition(".")
-            if self.valid_database_name(database_name):
-                if self.valid_database_name(collection_name):
-                    self._database = self._client[database_name]
-                    self._collection = self._database[collection_name]
-                else:
-                    raise ShellError(f"'{collection_name}' is not a valid collection name")
-            else:
-                raise ShellError(f"'{database_name}' is not a valid database name")
-        else:
-            if self.valid_database_name(db_collection_name):
-                self._collection = self._database[db_collection_name]
-            else:
-                raise ShellError(f"'{db_collection_name}' is not a valid collection name")
+        self._set_collection(db_collection_name)
+
+        # if "." in db_collection_name:
+        #     database_name, dot, collection_name = db_collection_name.partition(".")
+        #     if self.valid_database_name(database_name):
+        #         if self.valid_database_name(collection_name):
+        #             self._database = self._client[database_name]
+        #             self._collection = self._database[collection_name]
+        #         else:
+        #             raise ShellError(f"'{collection_name}' is not a valid collection name")
+        #     else:
+        #         raise ShellError(f"'{database_name}' is not a valid database name")
+        # else:
+        #     if self.valid_database_name(db_collection_name):
+        #         self._collection = self._database[db_collection_name]
+        #     else:
+        #         raise ShellError(f"'{db_collection_name}' is not a valid collection name")
 
     def is_master(self):
         """
@@ -254,12 +274,11 @@ class MongoDB:
              "scale": scale,
              "verbose": verbose})))
 
-    def __getattr__(self, item):
-        print("its me")
-        if hasattr(self._collection, item):
-            return getattr(self.collection, item)
-        else:
-            raise MongoDBShellError(f"No such item {item} in PyMongo collection object")
+    # def __getattr__(self, item):
+    #     if hasattr(self._collection, item):
+    #         return getattr(self.collection, item)
+    #     else:
+    #         raise MongoDBShellError(f"No such item {item} in PyMongo collection object")
 
     def _get_collections(self, db_names=None):
         """
@@ -398,31 +417,57 @@ class MongoDB:
         :return:
         """
         try:
-            _, terminal_lines = shutil.get_terminal_size(fallback=(80, 24))
+
             line_count = 0
+
             if self._output_filename:
                 print(f"Output is also going to '{self.output_file}'")
                 self._output_file = open(self._output_filename, "a+")
 
+            terminal_columns, terminal_lines = shutil.get_terminal_size(fallback=(80, 24))
+            lines_left = terminal_lines
             for i, l in enumerate(lines, 1):
-                if self.line_numbers:
-                    print(f"{i:<4} {l}")
 
+                line_residue = 0
+                if self.line_numbers:
+                    output_line = f"{i:<4} {l}"
                 else:
-                    print(f"{l}")
+                    output_line = l
+
+                line_overflow = int(len(output_line) / terminal_columns)
+                if line_overflow:
+                    line_residue = len(output_line) % terminal_columns
+
+                if line_overflow >= 1:
+                    lines_left = lines_left - line_overflow
+                else:
+                    lines_left = lines_left - 1
+
+                if line_residue > 1:
+                    lines_left = lines_left - 1
+
+                # line_count = line_count + 1
+
+                print(output_line)
+
                 if self._output_file:
-                    self._output_file.write(f"{l}\n")
+                    self._output_file.write(f"{output_line}\n")
                     self._output_file.flush()
-                line_count += 1
-                if line_count == terminal_lines - self.overlap - 1:
-                    line_count = 0
+
+                #print(lines_left)
+                if (lines_left - self.overlap - 1) <= 0:  # -1 to leave room for prompt
+
                     if self.paginate:
                         print("Hit Return to continue (q or quit to exit)", end="")
+
                         user_input = input()
                         if user_input.lower().strip() in ["q", "quit", "exit"]:
                             break
 
-                _, terminal_lines = shutil.get_terminal_size(fallback=(80, 24))
+                        terminal_columns, terminal_lines = shutil.get_terminal_size(fallback=(80, 24))
+                        lines_left = terminal_lines
+            # end for
+
             if self._output_file:
                 self._output_file.close()
         except KeyboardInterrupt:
@@ -457,4 +502,4 @@ class MongoDB:
         return f"mongodbshell.MongoDB('{self.database.name}', '{self.collection.name}', '{self.uri}')"
 
 
-mongo_client = MongoDB()
+client = MongoDB()

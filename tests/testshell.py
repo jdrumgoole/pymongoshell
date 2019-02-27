@@ -5,7 +5,7 @@ from io import StringIO
 from datetime import datetime
 import pymongo
 
-from mongodbshell import mongo_client, MongoDB, ShellError
+from mongodbshell import client, MongoDB, ShellError
 
 
 @contextmanager
@@ -22,22 +22,22 @@ def captured_output():
 class TestShell(unittest.TestCase):
 
     def setup(self):
-        mongo_client.drop_collection(confirm=False)
-        mongo_client.drop_database(confirm=False)
+        client.drop_collection(confirm=False)
+        client.drop_database(confirm=False)
 
     def tearDown(self):
-        mongo_client.drop_collection(confirm=False)
-        mongo_client.drop_database(confirm=False)
+        client.drop_collection(confirm=False)
+        client.drop_database(confirm=False)
 
     def test_Client(self):
         with captured_output() as (out, err):
             self.assertEqual(pymongo.MongoClient(),
-                             mongo_client.client)
+                             client.client)
             self.assertEqual("", err.getvalue())
 
     def test_ismaster(self):
         with captured_output() as (out, err):
-            mongo_client.is_master()
+            client.is_master()
             self.assertTrue("{'ismaster': True," in out.getvalue())
             self.assertEqual("", err.getvalue())
 
