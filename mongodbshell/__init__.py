@@ -31,6 +31,7 @@ else:
 class MongoDBShellError(ValueError):
     pass
 
+VERSION="1.0.3-alpha1"
 
 class MongoDB:
     """
@@ -70,6 +71,7 @@ class MongoDB:
         self._mongodb_uri = host
         self._client = pymongo.MongoClient(host=self._mongodb_uri, *args, **kwargs)
         self._database_name = database_name
+        self._collection_name = collection_name
         self._database = self._client[self._database_name]
         self._set_collection(collection_name)
         #
@@ -84,7 +86,7 @@ class MongoDB:
         self._overlap = 0
 
     @staticmethod
-    def valid_database_name(name):
+    def valid_mongodb_name(name):
         """
         Check that the name for a database has no illegal
         characters
@@ -126,25 +128,34 @@ class MongoDB:
         Set the default database for this Proxy object.
         :param database_name: A string naming the database
         """
-        if database_name and MongoDB.valid_database_name(database_name):
+        if database_name and MongoDB.valid_mongodb_name(database_name):
             self._database = self.client[database_name]
         else:
             raise ShellError(f"'{database_name}' is not a valid database name")
 
+    @property
+    def database_name(self):
+        """
+        :return: The name of the default database
+        """
+        return self._database_name
     def _set_collection(self, name):
         if "." in name:
             database_name, dot, collection_name = name.partition(".")
-            if self.valid_database_name(database_name):
-                if self.valid_database_name(collection_name):
+            if self.valid_mongodb_name(database_name):
+                if self.valid_mongodb_name(collection_name):
                     self._database = self._client[database_name]
+                    self._database_name = database_name
                     self._collection = self._database[collection_name]
+                    self._collection_name = collection_name
                 else:
                     raise ShellError(f"'{collection_name}' is not a valid collection name")
             else:
                 raise ShellError(f"'{database_name}' is not a valid database name")
         else:
-            if self.valid_database_name(name):
+            if self.valid_mongodb_name(name):
                 self._collection = self._database[name]
+                self._collection_name = name
             else:
                 raise ShellError(f"'{name}' is not a valid collection name")
 
@@ -155,6 +166,13 @@ class MongoDB:
         Return the default collection object associated with the `MongoDB` object.
         """
         return self._collection
+
+    @property
+    def collection_name(self):
+        """
+        :return: The name of the default collection
+        """
+        return self._collection_name
 
     @collection.setter
     def collection(self, db_collection_name):
@@ -451,7 +469,7 @@ class MongoDB:
                 print(output_line)
 
                 if self._output_file:
-                    self._output_file.write(f"{output_line}\n")
+                    self._output_file.write(f"{l}\n")
                     self._output_file.flush()
 
                 #print(lines_left)

@@ -13,8 +13,8 @@ dnspython = "*"
 tox = "*"
 setuptools = "*"
 sphinx-rtd-theme = "*"
-semvermanager = "*"
 pymongo = "*"
+semvermanager = "*"
 
 [dev-packages]
 

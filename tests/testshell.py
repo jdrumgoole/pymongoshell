@@ -101,6 +101,21 @@ class TestShell(unittest.TestCase):
         self.assertEqual(doc, {"this is": "a test"})
         client.drop_collection(confirm=False)
 
+        client = MongoDB()
+        client.collection = "test.jdrumgoole"
+        self.assertEqual(client.collection_name, "jdrumgoole")
+        self.assertEqual(client.database_name, "test")
+        self.assertEqual(client.collection.name, "jdrumgoole")
+        self.assertEqual(client.database.name, "test")
+
+        client = MongoDB()
+        client.database = "test"
+        client.collection = "jdrumgoole"
+        self.assertEqual(client.collection_name, "jdrumgoole")
+        self.assertEqual(client.database_name, "test")
+        self.assertEqual(client.collection.name, "jdrumgoole")
+        self.assertEqual(client.database.name, "test")
+
     @staticmethod
     def set_collection(client, name):
         client.collection = name
@@ -109,6 +124,11 @@ class TestShell(unittest.TestCase):
     def test_collection_property(self):
         client = MongoDB()
         client.collection = "newdb.jdrumgoole"
+        self.assertEqual(client.collection.name, "jdrumgoole")
+        self.assertEqual(client.database.name, "newdb")
+        client.collection = "test.test"
+        self.assertEqual(client.collection.name, "test")
+        self.assertEqual(client.database.name, "test")
         client.collection.insert_one({"this is": "a test"})
         doc = client.collection.find_one({"this is": "a test"})
 
@@ -119,6 +139,7 @@ class TestShell(unittest.TestCase):
 
         self.assertRaises(ShellError, TestShell.set_collection, client, "new$db.jdrumgoole")
         self.assertRaises(ShellError, TestShell.set_collection, client, "newdb.jdr$umgoole")
+
 
 
 if __name__ == '__main__':

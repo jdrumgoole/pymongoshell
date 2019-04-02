@@ -34,27 +34,26 @@ test: start_server get_zipcode_data
 	nosetests
 
 patch:
-	semvermgr --bump patch setup.py
+	semvermgr --bump patch setup.py mongodbshell/__init__.py
 	semvermgr --bump patch --label release docs/conf.py
 
 minor:
-	semvermgr --bump minor setup.py
+	semvermgr --bump minor setup.py  mongodbshell/__init__.py
 	semvermgr --bump minor --label release docs/conf.py
 
 major:
-	semvermgr --bump major setup.py
+	semvermgr --bump major setup.py  mongodbshell/__init__.py
 	semvermgr --bump major --label release docs/conf.py
 
 tag:
-	semvermgr --bump tag setup.py
+	semvermgr --bump tag setup.py  mongodbshell/__init__.py
 	semvermgr --bump tag --label release docs/conf.py
 
 tag_version:
-	semvermgr --bump tag_version setup.py
+	semvermgr --bump tag_version setup.py  mongodbshell/__init__.py
 	semvermgr --bump tag_version --label release docs/conf.py
 
 prod_build:clean test build
-	git tag -t 
 	twine upload --verbose --repository-url https://upload.pypi.org/legacy/ dist/* -u jdrumgoole
 
 test_build:test build
@@ -64,12 +63,15 @@ build:
 	python setup.py sdist
 
 clean:
-	rm -rf dist bdist sdist mongodbshell.egg-info
+	rm -rf dist bdist sdist mongodbshell.egg-info zipcodes.mdp.gz
+	python3 ./mongodbshell/drop_collection.py
 
 get_zipcode_data:
 	@if ! `./mongodbshell/demo_exists.py`; then\
-		mongodump --host ${ATLAS_HOSTS} --ssl --username readonly --password readonly --authenticationDatabase admin --db demo --collection zipcodes;\
-		mongorestore --drop;\
+		if [ ! -f "zipcodes.mdp.gz" ]; then\
+			wget https://s3-eu-west-1.amazonaws.com/developer-advocacy-public/zipcodes.mdp.gz;\
+		fi;\
+		mongorestore --drop --gzip --archive=zipcodes.mdp.gz;\
 	fi
 
 push:

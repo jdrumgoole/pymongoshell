@@ -23,13 +23,26 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     client = pymongo.MongoClient(host=args.host)
+
+    exit_code=0
     try:
         # The ismaster command is cheap and does not require auth.
+
         doc = client.admin.command('ismaster')
         if doc:
             if args.database in client.list_database_names():
                 if args.collection in client[args.database].list_collection_names():
-                    sys.exit(0)
-            sys.exit(1)
+                    #print("'{args.collection}' exists")
+                    exit_code=0
+                else:
+                    #print("'{args.database}.{args.collection}' doesn't exist")
+                    exit_code=1
+
+            else:
+                #print(f"'{args.database}' doesn't exist")
+                exit_code=1
+
+        sys.exit(exit_code)
+
     except ConnectionFailure:
         sys.exit(1)
