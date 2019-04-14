@@ -15,6 +15,7 @@ setuptools = "*"
 sphinx-rtd-theme = "*"
 pymongo = "*"
 semvermanager = "*"
+mongodbshell = "*"
 
 [dev-packages]
 

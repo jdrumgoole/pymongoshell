@@ -33,10 +33,10 @@ stop_server:
 test: start_server get_zipcode_data
 	nosetests
 
-prod_build:clean test build
+prod_build:clean test sdist
 	twine upload --verbose --repository-url https://upload.pypi.org/legacy/ dist/* -u jdrumgoole
 
-test_build:test build
+test_build:test sdist
 	twine upload --verbose --repository-url https://test.pypi.org/legacy/ dist/* -u jdrumgoole
 
 sdist:

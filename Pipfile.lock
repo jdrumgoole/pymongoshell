@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "b25d70a80c7fd2c279ecffed51e5c2ff207aee3e86d3f1d0fe716e4739d3e74e"
+            "sha256": "b69b21659a3da25e977ae8cb7cc79ce3bf137d0b37e3931e70b7209b062a9301"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -186,6 +186,13 @@
                 "sha256:e249096428b3ae81b08327a63a485ad0878de3fb939049038579ac0ef61e17e7"
             ],
             "version": "==1.1.1"
+        },
+        "mongodbshell": {
+            "hashes": [
+                "sha256:56316e597a19bf2d586666661ebbe5bf88ad524a9c8a0d8f5dfe2e84835540de"
+            ],
+            "index": "pypi",
+            "version": "==1.0.6"
         },
         "nose": {
             "hashes": [
