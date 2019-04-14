@@ -2,12 +2,39 @@
 """
 MongoDBShell
 ===============
+
+Author : joe@joedrumgoole.com @jdrumgoole on twitter.
+
 a module to allow more natural interaction with MongoDB via
 the Python shell. Install using `pip3` (`MongoDBShell` only supports Python 3).
 
 ``$pip3 install mongodbshell``
 
-To use just ``from mongodbshell import mongo_client``.
+To use do:
+
+``
+>>> import mongodbshell
+>>> client = mongodbshell.MongoDB()
+>>> client.collection="test.test"
+>>> client
+mongodbshell.MongoDB('test', 'test', 'mongodb://localhost:27017')
+>>> client.insert_one({"msg" : "MongoDBShell is great"})
+ObjectId('5cb30cfa72a4ae3b105afa1c')
+>>> client.find_one()
+1    {'_id': ObjectId('5cb30cfa72a4ae3b105afa1c'), 'msg': 'MongoDBShell is great'}
+>>> client.line_numbers = 0
+>>> client.find_one()
+{'_id': ObjectId('5cb30cfa72a4ae3b105afa1c'), 'msg': 'MongoDBShell is great'}
+>>> # note the line number is no longer present
+>>> client.output_file="output.txt" # send all output to this file
+>>> client.find_one()
+Output is also going to 'output.txt'
+{'_id': ObjectId('5cb30cfa72a4ae3b105afa1c'), 'msg': 'MongoDBShell is great'}
+>>> print(open("output.txt").read(), end="")
+{'_id': ObjectId('5cb30cfa72a4ae3b105afa1c'), 'msg': 'MongoDBShell is great'}
+>>>
+
+``
 This will give you a prebuilt :py:class:`~MongoDBShell.MongoDB` object.
 
 """
@@ -219,7 +246,7 @@ class MongoDB:
         and paginate the output to the screen.
         """
         # print(f"database.collection: '{self.database.name}.{self.collection.name}'")
-        self.pager(self._cursor_to_line(self.collection.find(*args, **kwargs)))
+        self.print_cursor(self.collection.find(*args, **kwargs))
 
     def find_one(self, *args, **kwargs):
         """
@@ -227,7 +254,7 @@ class MongoDB:
         and paginate the output to the screen.
         """
         # print(f"database.collection: '{self.database.name}.{self.collection.name}'")
-        self.pager(self.doc_to_lines(self.collection.find_one(*args, **kwargs)))
+        self.print_doc(self.collection.find_one(*args, **kwargs))
 
     def insert_one(self, *args, **kwargs):
         """
@@ -277,20 +304,25 @@ class MongoDB:
         self.pager(self.client.list_database_names())
 
     def dbstats(self):
+        """
+        Run dbstats command for database
+        See https://docs.mongodb.com/manual/reference/method/db.stats/
+        """
         pprint.pprint(self.database.command("dbstats"))
 
     def collstats(self, scale=1024, verbose=False):
         """
-        see https://docs.mongodb.com/v4.0/reference/command/collStats/
+        Run collection stats for collection.
+        see https://docs.mongodb.com/manual/reference/command/collStats/
 
         :param scale: Scale at which to report sizes
         :param verbose: used for extended report on legacy MMAPV1 storage engine
         :return: JSON doc with stats
         """
-        self.pager(self.doc_to_lines(self.database.command(
-            {"collStats": self._collection_name,
-             "scale": scale,
-             "verbose": verbose})))
+        self.print_doc(self.database.command(
+                            {"collStats": self._collection_name,
+                             "scale": scale,
+                             "verbose": verbose}))
 
     # def __getattr__(self, item):
     #     if hasattr(self._collection, item):
@@ -409,9 +441,15 @@ class MongoDB:
         else:
             self._output_filename = filename
 
+    def paginate_doc(self, doc):
+        """
+
+        :param doc: a dictionary of data
+        :return:
+        """
     def pager(self, lines):
         """
-        Pager is a function that outputs lines to a terminal. It uses
+        Outputs lines to a terminal. It uses
         `shutil.get_terminal_size` to determine the height of the terminal.
         It expects an iterator that returns a line at a time and those lines
         should be terminated by a valid newline sequence.
@@ -432,7 +470,7 @@ class MongoDB:
         next.
 
         :param lines:
-        :return:
+        :return: paginated output
         """
         try:
 
@@ -494,6 +532,12 @@ class MongoDB:
                 self._output_file.close()
 
     def doc_to_lines(self, doc, format_func=None):
+        """
+        Generator that converts a doc to a sequence of lines.
+        :param doc: A dictionary
+        :param format_func: customisable formatter defaults to pformat
+        :return: a generator yielding a line at a time
+        """
         if format_func:
             for l in format_func(doc).splitlines():
                 yield l
@@ -505,11 +549,21 @@ class MongoDB:
                 yield l
 
     def cursor_to_lines(self, cursor, format_func=None):
+        """
+        Take a cursor that returns a list of docs and returns a
+        generator yield each line of each doc a line at a time.
+        :param cursor: A mongod cursor yielding docs (dictonaries)
+        :param format_func: A customisable format function
+        :return: a generator yielding a line at a time
+        """
         for doc in cursor:
             yield from self.doc_to_lines(doc, format_func)
 
     def print_cursor(self,  cursor, format_func=None):
         return self.pager(self.cursor_to_lines(cursor, format_func))
+
+    def print_doc(self, doc, format_func=None):
+        return self.pager(self.doc_to_lines(doc, format_func))
 
     def __str__(self):
         return f"client     : '{self.uri}'\n" +\
