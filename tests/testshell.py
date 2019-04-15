@@ -5,7 +5,7 @@ from io import StringIO
 from datetime import datetime
 import pymongo
 
-from mongodbshell import mongo_client, Client
+from mongodbshell import client, MongoDB, ShellError
 
 
 @contextmanager
@@ -22,27 +22,27 @@ def captured_output():
 class TestShell(unittest.TestCase):
 
     def setup(self):
-        mongo_client.drop_collection(confirm=False)
-        mongo_client.drop_database(confirm=False)
+        client.drop_collection(confirm=False)
+        client.drop_database(confirm=False)
 
     def tearDown(self):
-        mongo_client.drop_collection(confirm=False)
-        mongo_client.drop_database(confirm=False)
+        client.drop_collection(confirm=False)
+        client.drop_database(confirm=False)
 
     def test_Client(self):
         with captured_output() as (out, err):
             self.assertEqual(pymongo.MongoClient(),
-                             mongo_client.client)
+                             client.client)
             self.assertEqual("", err.getvalue())
 
     def test_ismaster(self):
         with captured_output() as (out, err):
-            mongo_client.is_master()
+            client.is_master()
             self.assertTrue("{'ismaster': True," in out.getvalue())
             self.assertEqual("", err.getvalue())
 
     def test_retrywrites(self):
-        p = Client(retryWrites=True)
+        p = MongoDB(retryWrites=True)
         with captured_output() as (out, err):
             p.is_master()
             self.assertTrue("{'ismaster': True," in out.getvalue())
@@ -50,8 +50,8 @@ class TestShell(unittest.TestCase):
     def test_find_one(self):
 
         with captured_output() as (out, err):
-            client = Client(database_name="demo",
-                            collection_name="zipcodes")
+            client = MongoDB(database_name="demo",
+                             collection_name="zipcodes")
 
             client.line_numbers = False
             client.find_one()
@@ -60,8 +60,8 @@ class TestShell(unittest.TestCase):
 
     def test_find(self):
         with captured_output() as (out, err):
-            client = Client(database_name="demo",
-                          collection_name="zipcodes")
+            client = MongoDB(database_name="demo",
+                             collection_name="zipcodes")
             client.pretty_print = False
             client.paginate = False
             client.line_numbers = False
@@ -72,7 +72,7 @@ class TestShell(unittest.TestCase):
 
     def test_insert_one(self):
         with captured_output() as (out, err):
-            client = Client()
+            client = MongoDB()
             now = datetime.utcnow()
             client.insert_one({"ts": now})
             self.assertTrue(client.collection.find_one({"ts": now}))
@@ -81,13 +81,65 @@ class TestShell(unittest.TestCase):
 
     def test_insert_many(self):
         with captured_output() as (out, err):
-            client = Client()
+            client = MongoDB()
             many = [{"a": 1}, {"a": 1}, {"a": 3}]
             client.insert_many(many)
             self.assertTrue(client.collection.find_one({"a": 3}))
             client.delete_many({"a": 1})
             client.delete_one({"a": 3})
             self.assertFalse(client.collection.find_one({"a": 3}))
+
+    def test_database(self):
+        client = MongoDB()
+        client.database = "test"
+        client.collection = "jdrumgoole"
+        client.insert_one({"this is": "a test"})
+        doc = client.collection.find_one({"this is": "a test"})
+
+        self.assertTrue(isinstance(doc, dict))
+        del doc["_id"]
+        self.assertEqual(doc, {"this is": "a test"})
+        client.drop_collection(confirm=False)
+
+        client = MongoDB()
+        client.collection = "test.jdrumgoole"
+        self.assertEqual(client.collection_name, "jdrumgoole")
+        self.assertEqual(client.database_name, "test")
+        self.assertEqual(client.collection.name, "jdrumgoole")
+        self.assertEqual(client.database.name, "test")
+
+        client = MongoDB()
+        client.database = "test"
+        client.collection = "jdrumgoole"
+        self.assertEqual(client.collection_name, "jdrumgoole")
+        self.assertEqual(client.database_name, "test")
+        self.assertEqual(client.collection.name, "jdrumgoole")
+        self.assertEqual(client.database.name, "test")
+
+    @staticmethod
+    def set_collection(client, name):
+        client.collection = name
+        return client
+
+    def test_collection_property(self):
+        client = MongoDB()
+        client.collection = "newdb.jdrumgoole"
+        self.assertEqual(client.collection.name, "jdrumgoole")
+        self.assertEqual(client.database.name, "newdb")
+        client.collection = "test.test"
+        self.assertEqual(client.collection.name, "test")
+        self.assertEqual(client.database.name, "test")
+        client.collection.insert_one({"this is": "a test"})
+        doc = client.collection.find_one({"this is": "a test"})
+
+        self.assertTrue(isinstance(doc, dict))
+        del doc["_id"]
+        self.assertEqual(doc, {"this is": "a test"})
+        client.drop_collection(confirm=False)
+
+        self.assertRaises(ShellError, TestShell.set_collection, client, "new$db.jdrumgoole")
+        self.assertRaises(ShellError, TestShell.set_collection, client, "newdb.jdr$umgoole")
+
 
 
 if __name__ == '__main__':

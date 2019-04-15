@@ -13,53 +13,36 @@ supports Python 3.
 
 ```python
 $ pip3 install mongodbshell
-Collecting mongodbshell
-  Downloading https://files.pythonhosted.org/packages/9f/23/e5478384a52b609353f10a1201742a516c6310fe64ddb62e4362c188f752/mongodbshell-0.1a5.tar.gz
-Requirement already satisfied: pymongo in /Library/Frameworks/Python.framework/Versions/3.7/lib/python3.7/site-packages (from mongodbshell) (3.7.2)
-Collecting dnspython (from mongodbshell)
-  Downloading https://files.pythonhosted.org/packages/ec/d3/3aa0e7213ef72b8585747aa0e271a9523e713813b9a20177ebe1e939deb0/dnspython-1.16.0-py2.py3-none-any.whl (188kB)
-    100% |████████████████████████████████| 194kB 7.3MB/s
-Building wheels for collected packages: mongodbshell
-  Running setup.py bdist_wheel for mongodbshell ... done
-  Stored in directory: /Users/jdrumgoole/Library/Caches/pip/wheels/54/5c/0d/2a430d7b25fb55ddee658aefab9593940d2d0047a6b1fcfc6d
-Successfully built mongodbshell
-Installing collected packages: dnspython, mongodbshell
-Successfully installed dnspython-1.16.0 mongodbshell-0.1a5
 ```
 
-A complete set of API docs can be found on[read the docs](https://mongodbshell.readthedocs.io/en/latest/)
+A complete set of API docs can be found on [read the docs](https://mongodbshell.readthedocs.io/en/latest/)
 
 ## Using the mongodbshell
 
-The easiest way to get started with `mongodbshell` is to import the prebuilt
-`mongo_client` object. The `mongo_client` object expects to connect to a `mongod` running 
-locally on port 27017 (it uses the [MongoDB URI](https://docs.mongodb.com/manual/reference/connection-string/) 
-`mongodb://localhost:27017` by default)
+First we create a `MongoDB` object. This is a proxy for all the 
+commands we can run using `MongoDBShell`.
 
 ```python
-$ python3
-Python 3.6.5 (v3.6.5:f59c0932b4, Mar 28 2018, 03:03:55)
-[GCC 4.2.1 (Apple Inc. build 5666) (dot 3)] on darwin
-Type "help", "copyright", "credits" or "license" for more information.
->>> from mongodbshell import mongo_client
->>> mongo_client
-Client('test', 'test', 'mongodb://localhost:27017')
->>> monggo_client.list_database_names()
-1    config
-2    test
-3    local
-4    admin
->>>
+>>> client=mongodbshell.MongoDB()
+>>> client
+mongodbshell.MongoDB('test', 'test', 'mongodb://localhost:27017')
 ```
-Each Client object has host of standard properties:
+
+As you can see a `MongoDB` object embeds the default database `test` and collection
+`test`. We can also access the native `MongoClient` object.
+
+
+Each `MongoDB` object has host of standard properties:
 ```python
->>> mongo_client.client
+>>> client
+mongodbshell.MongoDB('test', 'test', 'mongodb://localhost:27017')
+>>> client.client
 MongoClient(host=['localhost:27017'], document_class=dict, tz_aware=False, connect=True)
->>> mongo_client.database
+>>> client.database
 Database(MongoClient(host=['localhost:27017'], document_class=dict, tz_aware=False, connect=True), 'test')
->>> mongo_client.collection
+>>> client.collection
 Collection(Database(MongoClient(host=['localhost:27017'], document_class=dict, tz_aware=False, connect=True), 'test'), 'test')
->>> mongo_client.uri
+>>> client.uri
 'mongodb://localhost:27017'
 >>>
 ```
@@ -67,7 +50,7 @@ Collection(Database(MongoClient(host=['localhost:27017'], document_class=dict, t
 There are also convenience functions for the most popular operations:
 
 ```python
->>> mongo_client.is_master()
+>>> client.is_master()
 {'ismaster': True,
  'localTime': datetime.datetime(2019, 1, 16, 15, 15, 41, 87000),
  'logicalSessionTimeoutMinutes': 30,
@@ -78,6 +61,7 @@ There are also convenience functions for the most popular operations:
  'minWireVersion': 0,
  'ok': 1.0,
  'readOnly': False}
+ 
 >>> mongo_client.insert_one({"name" : "Joe Drumgoole", "twitter_handle" : "@jdrumgoole"})
 ObjectId('5c3f4f2fc3b498d6674b08f0')
 >>> mongo_client.find_one( {"name" : "Joe Drumgoole"})
@@ -92,14 +76,14 @@ Line numbers are added to output by default. You can turn off line numbers by
 setting the `line_numbers` flag to false.
 
 ```python
->>> mongo_client.insert_one({"name" : "Joe Drumgoole", "twitter_handle" : "@jdrumgoole"})
+>>> client.insert_one({"name" : "Joe Drumgoole", "twitter_handle" : "@jdrumgoole"})
 ObjectId('5c3f4f2fc3b498d6674b08f0')
->>> mongo_client.find_one( {"name" : "Joe Drumgoole"})
+>>> client.find_one( {"name" : "Joe Drumgoole"})
 1    {'_id': ObjectId('5c3f4b04c3b498d4a1c6ce22'),
 2     'name': 'Joe Drumgoole',
 3     'twitter_handle': '@jdrumgoole'}
->>> mongo_client.line_numbers = False                      # Turn off line numbers
->>> mongo_client.find_one( {"name" : "Joe Drumgoole"})
+>>> client.line_numbers = False                      # Turn off line numbers
+>>> client.find_one( {"name" : "Joe Drumgoole"})
 {'_id': ObjectId('5c3f4b04c3b498d4a1c6ce22'),
  'name': 'Joe Drumgoole',
  'twitter_handle': '@jdrumgoole'}
@@ -107,12 +91,12 @@ ObjectId('5c3f4f2fc3b498d6674b08f0')
 ```
 ## Connecting to a specific MongoDB URI
 
-You can connect to a different database by using the `Client` class. Here is an
+You can connect to a different database by using the `MongoDB` class. Here is an
 example connection to a [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) hosted datbase. 
 
 ```python
->>> from mongodbshell import Client
->>> atlas=Client(uri="mongodb+srv://readonly:readonly@demodata-rgl39.mongodb.net/test?retryWrites=true", database="demo", collection="zipcodes")
+>>> from mongodbshell import MongoDB
+>>> atlas=MongoDB(uri="mongodb+srv://readonly:readonly@demodata-rgl39.mongodb.net/test?retryWrites=true", database="demo", collection="zipcodes")
 >>> atlas.find_one()
 1    {'_id': '01069',
 2     'city': 'PALMER',
@@ -144,8 +128,7 @@ or explicitly call `next()` on each cursor item.
 
 This is tedious and becomes even more so when the objects are large enough to
 scroll off the screen. This is not a problem with the `mongodbshell` as the
-`Client` class and the built in `mongo_client` object automatically handle 
-pretty printing and paginating outing. 
+`MongoDB` object will automatically handle pretty printing and paginating outing. 
 
 ```python
 >>> atlas.find()
@@ -169,8 +152,8 @@ Pagination will dynamically adjust to screen height.
 
 ## Outputting to a file
 
-The `Client` class can send output to a file by setting the `output_file` property
-on the `Client` class. 
+The `MongoDB` class can send output to a file by setting the `output_file` property
+on the `MongoDB` class. 
 
 ```python
 >>> atlas.output_file="zipcodes.txt"
@@ -211,18 +194,18 @@ Output will continue to be sent to the `output_file` until the output_file is as
 
 ## Options
 
-You can set the following options on the `mongo_client` or `Client` class objects. 
+You can set the following options on the `MongoDB` class objects. 
 
-`Client.line_numbers` : Bool. True to display line numbers in output, False to 
+`MongoDB.line_numbers` : Bool. True to display line numbers in output, False to 
 remove them.
 
-`Client.pretty_print` : Bool. True to use `pprint.pprint` to output documents.
+`MongoDB.pretty_print` : Bool. True to use `pprint.pprint` to output documents.
 False to write them out as the database returned them.
 
-`Client.paginate` : Bool. True to paginate output based on screen height. False to just
+`MongoDB.paginate` : Bool. True to paginate output based on screen height. False to just
 send all output directly to console.
 
-`Client.output_file` : Str. Define a file to write results to. All output is
+`MongoDB.output_file` : Str. Define a file to write results to. All output is
 appended to the file. Each line is flushed so content is not lost. Set `output_file`
 ton `None` or the emtpy string ("") to stop output going to a file.
 

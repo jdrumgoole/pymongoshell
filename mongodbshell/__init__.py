@@ -2,12 +2,43 @@
 """
 MongoDBShell
 ===============
-a module to allow more natural interaction with MongoDB via
-the Python shell. Install using `pip3` (`MongoDBShell` only supports Python 3).
+
+Author : joe@joedrumgoole.com
+
+Follow me on twitter like `@jdrumgoole <https://twitter.com/jdrumgoole>`_. for
+updates on this package.
+
+`MongoDBShell <https://pypi.org/project/mongodbshell/>`_ is a module that
+provides more natural interaction with MongoDB via the Python shell.
+Install using `pip3` (`MongoDBShell` only supports Python 3).
 
 ``$pip3 install mongodbshell``
 
-To use just ``from mongodbshell import mongo_client``.
+To use::
+
+    >>> import mongodbshell
+    >>> client = mongodbshell.MongoDB()
+    >>> client.collection="test.test"
+    >>> client
+    mongodbshell.MongoDB('test', 'test', 'mongodb://localhost:27017')
+    >>> client.insert_one({"msg" : "MongoDBShell is great"})
+    ObjectId('5cb30cfa72a4ae3b105afa1c')
+    >>> client.find_one()
+    1    {'_id': ObjectId('5cb30cfa72a4ae3b105afa1c'), 'msg': 'MongoDBShell is great'}
+    >>> client.line_numbers = 0
+    >>> client.find_one()
+    {'_id': ObjectId('5cb30cfa72a4ae3b105afa1c'), 'msg': 'MongoDBShell is great'}
+    >>> # note the line number is no longer present
+    >>> client.output_file="output.txt" # send all output to this file
+    >>> client.find_one()
+    Output is also going to 'output.txt'
+    {'_id': ObjectId('5cb30cfa72a4ae3b105afa1c'), 'msg': 'MongoDBShell is great'}
+    >>> print(open("output.txt").read(), end="")
+    {'_id': ObjectId('5cb30cfa72a4ae3b105afa1c'), 'msg': 'MongoDBShell is great'}
+    >>>
+
+
+>>>>>>> 904067c0311c72e36b838731e3b7ff0e8632e102
 This will give you a prebuilt :py:class:`~MongoDBShell.MongoDB` object.
 
 """
@@ -15,14 +46,14 @@ This will give you a prebuilt :py:class:`~MongoDBShell.MongoDB` object.
 import pymongo
 import pprint
 import shutil
-import os
+import sys
 
 
 class ShellError(ValueError):
     pass
 
 
-if os.platform == "Windows":
+if sys.platform == "Windows":
     db_name_excluded_chars = r'/\. "$*<>:|?'
 else:
     db_name_excluded_chars = r'/\. "$'
@@ -31,9 +62,11 @@ else:
 class MongoDBShellError(ValueError):
     pass
 
-class Client:
+VERSION="1.0.3-alpha1"
+
+class MongoDB:
     """
-    Simple command line Client proxy for use in the Python shell.
+    Simple command line MongoDB proxy for use in the Python shell.
     """
 
     def __init__(self,
@@ -52,9 +85,18 @@ class Client:
         :param mongodb_uri: A properly formatted MongoDB URI
         :param *args, *kwargs : Passed through to MongoClient
 
-        >>> from mongodbshell import Client
-        >>> mproxy.database = "demo"
-        >>> mproxy.collection = "zipcodes"
+        >>> from mongodbshell import MongoDB
+        >>> client = MongoDB()
+        >>> client.database = "demo"
+        >>> client.collection = "zipcodes"
+        >>> client.collection = "demo.zipcodes"
+        >>> client.collection = "db$.test"
+        Traceback (most recent call last):
+          File "<stdin>", line 1, in <module>
+          File "/Users/jdrumgoole/GIT/mongodbshell/mongodbshell/__init__.py", line 152, in collection
+            else:
+        mongodbshell.ShellError: 'db$' is not a valid database name
+        >>>
 
         """
         self._mongodb_uri = host
@@ -62,7 +104,9 @@ class Client:
         self._database_name = database_name
         self._collection_name = collection_name
         self._database = self._client[self._database_name]
-        self._collection = self._database[self._collection_name]
+        self._set_collection(collection_name)
+        #
+        # self._collection = self._database[self._collection_name]
         self._output_filename = None
         self._output_file = None
 
@@ -72,7 +116,21 @@ class Client:
 
         self._overlap = 0
 
-    def MongoDB(self, *args, **kwargs):
+    @staticmethod
+    def valid_mongodb_name(name):
+        """
+        Check that the name for a database has no illegal
+        characters
+        :param name: the name of the database
+        :return: True if the name is valid
+        """
+
+        for char in db_name_excluded_chars:
+            if char in name:
+                return None
+
+        return name
+
     @property
     def client(self):
         """
@@ -101,35 +159,78 @@ class Client:
         Set the default database for this Proxy object.
         :param database_name: A string naming the database
         """
-        db, dot, col = database_name.partition("")
-
-        if db:
-
+        if database_name and MongoDB.valid_mongodb_name(database_name):
             self._database = self.client[database_name]
         else:
             raise ShellError(f"'{database_name}' is not a valid database name")
 
-        if col:
-            self._collection = self._database[col]
+    @property
+    def database_name(self):
+        """
+        :return: The name of the default database
+        """
+        return self._database_name
+    def _set_collection(self, name):
+        if "." in name:
+            database_name, dot, collection_name = name.partition(".")
+            if self.valid_mongodb_name(database_name):
+                if self.valid_mongodb_name(collection_name):
+                    self._database = self._client[database_name]
+                    self._database_name = database_name
+                    self._collection = self._database[collection_name]
+                    self._collection_name = collection_name
+                else:
+                    raise ShellError(f"'{collection_name}' is not a valid collection name")
+            else:
+                raise ShellError(f"'{database_name}' is not a valid database name")
+        else:
+            if self.valid_mongodb_name(name):
+                self._collection = self._database[name]
+                self._collection_name = name
+            else:
+                raise ShellError(f"'{name}' is not a valid collection name")
 
     @property
     def collection(self):
         """
         Assign to `collection` to reset the current default collection.
-        Return the default collection object associated with the `Proxy` object.
+        Return the default collection object associated with the `MongoDB` object.
         """
         return self._collection
 
-    @collection.setter
-    def collection(self, collection_name):
+    @property
+    def collection_name(self):
         """
-        Set the default collection for the database associated with the Proxy
-        object.
-        :param collection_name:
+        :return: The name of the default collection
+        """
+        return self._collection_name
+
+    @collection.setter
+    def collection(self, db_collection_name):
+        """
+        Set the default collection for the database associated with the `MongoDB`
+        object. The user can specify a database and a collection by using a dot
+        notation <database_name.collection_name>.
+        :param db_collection_name: the name of the database and collection
         """
 
-        i
-        self._collection = self.database[collection_name]
+        self._set_collection(db_collection_name)
+
+        # if "." in db_collection_name:
+        #     database_name, dot, collection_name = db_collection_name.partition(".")
+        #     if self.valid_database_name(database_name):
+        #         if self.valid_database_name(collection_name):
+        #             self._database = self._client[database_name]
+        #             self._collection = self._database[collection_name]
+        #         else:
+        #             raise ShellError(f"'{collection_name}' is not a valid collection name")
+        #     else:
+        #         raise ShellError(f"'{database_name}' is not a valid database name")
+        # else:
+        #     if self.valid_database_name(db_collection_name):
+        #         self._collection = self._database[db_collection_name]
+        #     else:
+        #         raise ShellError(f"'{db_collection_name}' is not a valid collection name")
 
     def is_master(self):
         """
@@ -149,7 +250,7 @@ class Client:
         and paginate the output to the screen.
         """
         # print(f"database.collection: '{self.database.name}.{self.collection.name}'")
-        self.pager(self._cursor_to_line(self.collection.find(*args, **kwargs)))
+        self.print_cursor(self.collection.find(*args, **kwargs))
 
     def find_one(self, *args, **kwargs):
         """
@@ -157,7 +258,7 @@ class Client:
         and paginate the output to the screen.
         """
         # print(f"database.collection: '{self.database.name}.{self.collection.name}'")
-        self.pager(self.doc_to_lines(self.collection.find_one(*args, **kwargs)))
+        self.print_doc(self.collection.find_one(*args, **kwargs))
 
     def insert_one(self, *args, **kwargs):
         """
@@ -207,27 +308,31 @@ class Client:
         self.pager(self.client.list_database_names())
 
     def dbstats(self):
+        """
+        Run dbstats command for database
+        See https://docs.mongodb.com/manual/reference/method/db.stats/
+        """
         pprint.pprint(self.database.command("dbstats"))
 
     def collstats(self, scale=1024, verbose=False):
         """
-        see https://docs.mongodb.com/v4.0/reference/command/collStats/
+        Run collection stats for collection.
+        see https://docs.mongodb.com/manual/reference/command/collStats/
 
         :param scale: Scale at which to report sizes
         :param verbose: used for extended report on legacy MMAPV1 storage engine
         :return: JSON doc with stats
         """
-        self.pager(self.doc_to_lines(self.database.command(
-            {"collStats": self._collection_name,
-             "scale": scale,
-             "verbose": verbose})))
+        self.print_doc(self.database.command(
+                            {"collStats": self._collection_name,
+                             "scale": scale,
+                             "verbose": verbose}))
 
-    def __getattr__(self, item):
-        print("its me")
-        if hasattr(self._collection, item):
-            return getattr(self.collection, item)
-        else:
-            raise MongoDBShellError(f"No such item {item} in PyMongo collection object")
+    # def __getattr__(self, item):
+    #     if hasattr(self._collection, item):
+    #         return getattr(self.collection, item)
+    #     else:
+    #         raise MongoDBShellError(f"No such item {item} in PyMongo collection object")
 
     def _get_collections(self, db_names=None):
         """
@@ -340,9 +445,15 @@ class Client:
         else:
             self._output_filename = filename
 
+    def paginate_doc(self, doc):
+        """
+
+        :param doc: a dictionary of data
+        :return:
+        """
     def pager(self, lines):
         """
-        Pager is a function that outputs lines to a terminal. It uses
+        Outputs lines to a terminal. It uses
         `shutil.get_terminal_size` to determine the height of the terminal.
         It expects an iterator that returns a line at a time and those lines
         should be terminated by a valid newline sequence.
@@ -363,34 +474,60 @@ class Client:
         next.
 
         :param lines:
-        :return:
+        :return: paginated output
         """
         try:
-            _, terminal_lines = shutil.get_terminal_size(fallback=(80, 24))
+
             line_count = 0
+
             if self._output_filename:
                 print(f"Output is also going to '{self.output_file}'")
                 self._output_file = open(self._output_filename, "a+")
 
+            terminal_columns, terminal_lines = shutil.get_terminal_size(fallback=(80, 24))
+            lines_left = terminal_lines
             for i, l in enumerate(lines, 1):
-                if self.line_numbers:
-                    print(f"{i:<4} {l}")
 
+                line_residue = 0
+                if self.line_numbers:
+                    output_line = f"{i:<4} {l}"
                 else:
-                    print(f"{l}")
+                    output_line = l
+
+                line_overflow = int(len(output_line) / terminal_columns)
+                if line_overflow:
+                    line_residue = len(output_line) % terminal_columns
+
+                if line_overflow >= 1:
+                    lines_left = lines_left - line_overflow
+                else:
+                    lines_left = lines_left - 1
+
+                if line_residue > 1:
+                    lines_left = lines_left - 1
+
+                # line_count = line_count + 1
+
+                print(output_line)
+
                 if self._output_file:
                     self._output_file.write(f"{l}\n")
                     self._output_file.flush()
-                line_count += 1
-                if line_count == terminal_lines - self.overlap - 1:
-                    line_count = 0
+
+                #print(lines_left)
+                if (lines_left - self.overlap - 1) <= 0:  # -1 to leave room for prompt
+
                     if self.paginate:
                         print("Hit Return to continue (q or quit to exit)", end="")
+
                         user_input = input()
                         if user_input.lower().strip() in ["q", "quit", "exit"]:
                             break
 
-                _, terminal_lines = shutil.get_terminal_size(fallback=(80, 24))
+                        terminal_columns, terminal_lines = shutil.get_terminal_size(fallback=(80, 24))
+                        lines_left = terminal_lines
+            # end for
+
             if self._output_file:
                 self._output_file.close()
         except KeyboardInterrupt:
@@ -399,6 +536,12 @@ class Client:
                 self._output_file.close()
 
     def doc_to_lines(self, doc, format_func=None):
+        """
+        Generator that converts a doc to a sequence of lines.
+        :param doc: A dictionary
+        :param format_func: customisable formatter defaults to pformat
+        :return: a generator yielding a line at a time
+        """
         if format_func:
             for l in format_func(doc).splitlines():
                 yield l
@@ -410,11 +553,21 @@ class Client:
                 yield l
 
     def cursor_to_lines(self, cursor, format_func=None):
+        """
+        Take a cursor that returns a list of docs and returns a
+        generator yield each line of each doc a line at a time.
+        :param cursor: A mongod cursor yielding docs (dictonaries)
+        :param format_func: A customisable format function
+        :return: a generator yielding a line at a time
+        """
         for doc in cursor:
             yield from self.doc_to_lines(doc, format_func)
 
     def print_cursor(self,  cursor, format_func=None):
         return self.pager(self.cursor_to_lines(cursor, format_func))
+
+    def print_doc(self, doc, format_func=None):
+        return self.pager(self.doc_to_lines(doc, format_func))
 
     def __str__(self):
         return f"client     : '{self.uri}'\n" +\
@@ -422,7 +575,7 @@ class Client:
                f"collection : '{self.collection.name}'"
 
     def __repr__(self):
-        return f"mongodbshell.Client('{self.database.name}', '{self.collection.name}', '{self.uri}')"
+        return f"mongodbshell.MongoDB('{self.database.name}', '{self.collection.name}', '{self.uri}')"
 
 
-mongo_client = Client()
+client = MongoDB()

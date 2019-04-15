@@ -4,8 +4,6 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-pymongo = "*"
-bson = "*"
 nose = "*"
 ipython = "*"
 sphinx = "*"
@@ -15,7 +13,9 @@ dnspython = "*"
 tox = "*"
 setuptools = "*"
 sphinx-rtd-theme = "*"
+pymongo = "*"
 semvermanager = "*"
+mongodbshell = "*"
 
 [dev-packages]
 
