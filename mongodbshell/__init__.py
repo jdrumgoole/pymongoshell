@@ -8,7 +8,7 @@ the Python shell. Install using `pip3` (`MongoDBShell` only supports Python 3).
 ``$pip3 install mongodbshell``
 
 To use just ``from mongodbshell import mongo_client``.
-This will give you a prebuilt :py:class:`~MongoDBShell.Client` object.
+This will give you a prebuilt :py:class:`~MongoDBShell.MongoDB` object.
 
 """
 
@@ -72,6 +72,7 @@ class Client:
 
         self._overlap = 0
 
+    def MongoDB(self, *args, **kwargs):
     @property
     def client(self):
         """
