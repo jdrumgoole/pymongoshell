@@ -300,10 +300,6 @@ class MongoDB:
     def aggregate(self,pipeline, session=None, **kwargs):
         """
         Run the aggregation pipeline
-        :param pipeline: An array of pipeline operations
-        :param session: Session for ACID Transactions
-        :param kwargs: Other aggregation parameters
-        :return: None
         """
         self.print_cursor(self.collection.aggregate(pipeline, session, **kwargs))
 
