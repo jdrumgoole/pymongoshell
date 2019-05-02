@@ -166,6 +166,7 @@ class MongoDB:
         :return: The name of the default database
         """
         return self._database_name
+
     def _set_collection(self, name):
         if "." in name:
             database_name, dot, collection_name = name.partition(".")
@@ -175,6 +176,7 @@ class MongoDB:
                     self._database_name = database_name
                     self._collection = self._database[collection_name]
                     self._collection_name = collection_name
+
                 else:
                     raise ShellError(f"'{collection_name}' is not a valid collection name")
             else:
@@ -185,6 +187,8 @@ class MongoDB:
                 self._collection_name = name
             else:
                 raise ShellError(f"'{name}' is not a valid collection name")
+
+        return self._collection
 
     @property
     def collection(self):
@@ -210,23 +214,9 @@ class MongoDB:
         :param db_collection_name: the name of the database and collection
         """
 
-        self._set_collection(db_collection_name)
-
-        # if "." in db_collection_name:
-        #     database_name, dot, collection_name = db_collection_name.partition(".")
-        #     if self.valid_database_name(database_name):
-        #         if self.valid_database_name(collection_name):
-        #             self._database = self._client[database_name]
-        #             self._collection = self._database[collection_name]
-        #         else:
-        #             raise ShellError(f"'{collection_name}' is not a valid collection name")
-        #     else:
-        #         raise ShellError(f"'{database_name}' is not a valid database name")
-        # else:
-        #     if self.valid_database_name(db_collection_name):
-        #         self._collection = self._database[db_collection_name]
-        #     else:
-        #         raise ShellError(f"'{db_collection_name}' is not a valid collection name")
+        col = self._set_collection(db_collection_name)
+        print(col)
+        return col
 
     def is_master(self):
         """
