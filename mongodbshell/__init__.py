@@ -37,8 +37,6 @@ To use::
     {'_id': ObjectId('5cb30cfa72a4ae3b105afa1c'), 'msg': 'MongoDBShell is great'}
     >>>
 
-
->>>>>>> 904067c0311c72e36b838731e3b7ff0e8632e102
 This will give you a prebuilt :py:class:`~MongoDBShell.MongoDB` object.
 
 """
@@ -61,8 +59,6 @@ else:
 
 class MongoDBShellError(ValueError):
     pass
-
-VERSION="1.0.3-alpha1"
 
 class MongoDB:
     """
