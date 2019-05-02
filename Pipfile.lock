@@ -189,10 +189,10 @@
         },
         "mongodbshell": {
             "hashes": [
-                "sha256:56316e597a19bf2d586666661ebbe5bf88ad524a9c8a0d8f5dfe2e84835540de"
+                "sha256:f22facc3c952a7cbda528c2fa0fee0005262e5e268e84275c43e1ed868938fb0"
             ],
             "index": "pypi",
-            "version": "==1.0.6"
+            "version": "==1.0.7"
         },
         "nose": {
             "hashes": [

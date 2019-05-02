@@ -15,7 +15,7 @@ supports Python 3.
 $ pip3 install mongodbshell
 ```
 
-A complete set of API docs can be found on[read the docs](https://mongodbshell.readthedocs.io/en/latest/)
+A complete set of API docs can be found on [read the docs](https://mongodbshell.readthedocs.io/en/latest/)
 
 ## Using the mongodbshell
 

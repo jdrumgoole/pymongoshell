@@ -3,10 +3,14 @@
 MongoDBShell
 ===============
 
-Author : joe@joedrumgoole.com @jdrumgoole on twitter.
+Author : joe@joedrumgoole.com
 
-a module to allow more natural interaction with MongoDB via
-the Python shell. Install using `pip3` (`MongoDBShell` only supports Python 3).
+Follow me on twitter like `@jdrumgoole <https://twitter.com/jdrumgoole>`_. for
+updates on this package.
+
+`MongoDBShell <https://pypi.org/project/mongodbshell/>`_ is a module that
+provides more natural interaction with MongoDB via the Python shell.
+Install using `pip3` (`MongoDBShell` only supports Python 3).
 
 ``$pip3 install mongodbshell``
 
@@ -34,6 +38,7 @@ To use::
     >>>
 
 
+>>>>>>> 904067c0311c72e36b838731e3b7ff0e8632e102
 This will give you a prebuilt :py:class:`~MongoDBShell.MongoDB` object.
 
 """
