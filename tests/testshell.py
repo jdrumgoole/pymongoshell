@@ -89,6 +89,14 @@ class TestShell(unittest.TestCase):
             client.delete_one({"a": 3})
             self.assertFalse(client.collection.find_one({"a": 3}))
 
+    def test_aggregate(self):
+        with captured_output() as (out, err):
+            client = MongoDB()
+            client.insert_many([{"a": 1}, {"a": 1}, {"a": 3}])
+            doc = client.collection.find_one({"a": 3})
+            client.aggregate([{"$match": {"a": 3}}])
+            self.assertTrue(str(doc["_id"]) in out.getvalue())
+
     def test_database(self):
         client = MongoDB()
         client.database = "test"

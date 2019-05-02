@@ -296,6 +296,16 @@ class MongoDB:
         result = self.collection.count_documents(filter, *args, **kwargs)
         return result
 
+    def aggregate(self,pipeline, session=None, **kwargs):
+        """
+        Run the aggregation pipeline
+        :param pipeline: An array of pipeline operations
+        :param session: Session for ACID Transactions
+        :param kwargs: Other aggregation parameters
+        :return: None
+        """
+        self.print_cursor(self.collection.aggregate(pipeline, session, **kwargs))
+
     def list_database_names(self):
         """
         List all the databases on the default server.
