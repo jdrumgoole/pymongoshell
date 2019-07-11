@@ -18,7 +18,7 @@ URL = 'https://github.com/jdrumgoole/mongodbshell'
 EMAIL = 'joe@joedrumgoole.com'
 AUTHOR = 'Joe Drumgoole'
 REQUIRES_PYTHON = '>=3.6.0'
-VERSION = "1.0.12"
+VERSION = "1.0.15"
 
 # What packages are required for this module to be executed?
 REQUIRED = [

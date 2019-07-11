@@ -5,6 +5,7 @@
 #
 
 ATLAS_HOSTS="demodata-shard-0/demodata-shard-00-00-rgl39.mongodb.net:27017,demodata-shard-00-01-rgl39.mongodb.net:27017,demodata-shard-00-02-rgl39.mongodb.net:27017"
+PYTHON=python
 
 start_server:
 	@mkdir -p data
@@ -13,7 +14,7 @@ start_server:
 		echo "mongod is already running PID=`cat /tmp/mongod.pid`";\
 	else\
 		echo "starting mongod";\
-		mongod --dbpath ./data --fork --pidfilepath /tmp/mongod.pid --logpath mongod.log 2>&1 > /dev/null;\
+		mongod --dbpath ./data --pidfilepath /tmp/mongod.pid --logpath mongod.log 2>&1 > /dev/null;\
 		echo "Process ID=`cat /tmp/mongod.pid`";\
 	fi;
 #		echo "mongod is already running on port `cat /tmp/mongod.pid`"\
@@ -33,23 +34,23 @@ stop_server:
 test: start_server get_zipcode_data
 	nosetests
 
-prod_build:clean test sdist
+prod_build:clean  sdist
 	twine upload --verbose --repository-url https://upload.pypi.org/legacy/ dist/* -u jdrumgoole
 
 test_build:test sdist
 	twine upload --verbose --repository-url https://test.pypi.org/legacy/ dist/* -u jdrumgoole
 
 sdist:
-	python setup.py sdist
+	${PYTHON} setup.py sdist
 
 clean:
 	rm -rf dist bdist sdist mongodbshell.egg-info zipcodes.mdp.gz
-	python3 ./mongodbshell/drop_collection.py
+	${PYTHON} ./mongodbshell/drop_collection.py
 
 get_zipcode_data:
 	@if ! `./mongodbshell/demo_exists.py`; then\
 		if [ ! -f "zipcodes.mdp.gz" ]; then\
-			wget https://s3-eu-west-1.amazonaws.com/developer-advocacy-public/zipcodes.mdp.gz;\
+			curl https://s3-eu-west-1.amazonaws.com/developer-advocacy-public/zipcodes.mdp.gz;\
 		fi;\
 		mongorestore --drop --gzip --archive=zipcodes.mdp.gz;\
 	fi
@@ -63,7 +64,7 @@ release: test tox push
 	git add -u
 	git commit -m"Checkin for release to pypi"
 	git push
-	python3 setup.py upload
+	${PYTHON} setup.py upload
 
 tox:
 	tox

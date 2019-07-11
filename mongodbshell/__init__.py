@@ -238,6 +238,10 @@ class MongoDB:
         # print(f"database.collection: '{self.database.name}.{self.collection.name}'")
         self.print_cursor(self.collection.find(*args, **kwargs))
 
+    def find_explain(self, *args, **kwargs):
+
+        self.print_doc(self.collection.find(*args, **kwargs).explain()["executionStats"])
+
     def find_one(self, *args, **kwargs):
         """
         Run the pymongo find_one command against the default database and collection
@@ -342,8 +346,11 @@ class MongoDB:
                 size = db[col_name].g
                 yield f"{db_name}.{col_name}"
 
-    def list_collection_names(self, database_name):
-        self.pager(self._get_collections())
+    def list_collection_names(self,database_name=None):
+        if database_name:
+            self.pager(self._get_collections([database_name]))
+        else:
+            self.pager(self._get_collections())
 
     @staticmethod
     def confirm_yes(message):
@@ -356,6 +363,9 @@ class MongoDB:
         response = input(f"{message}[ y/Y]:")
         response.upper()
         return response == "Y"
+
+    def create_index(self, name):
+        self._collection.create_index(name)
 
     def drop_collection(self, confirm=True):
         if confirm and self.confirm_yes(f'Drop collection:{self._database_name}.{self._collection_name}'):
