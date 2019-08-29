@@ -5,7 +5,8 @@ from io import StringIO
 from datetime import datetime
 import pymongo
 
-from mongodbshell import client, MongoDB, ShellError
+from mongodbshell import client
+from mongodbshell.cli import CLI, ShellError, MongoDBShellError
 
 
 @contextmanager
@@ -42,16 +43,15 @@ class TestShell(unittest.TestCase):
             self.assertEqual("", err.getvalue())
 
     def test_retrywrites(self):
-        p = MongoDB(retryWrites=True)
+        p = CLI(retryWrites=True)
         with captured_output() as (out, err):
             p.is_master()
             self.assertTrue("{'ismaster': True," in out.getvalue())
 
     def test_find_one(self):
-
         with captured_output() as (out, err):
-            client = MongoDB(database_name="demo",
-                             collection_name="zipcodes")
+            client = CLI(database_name="demo",
+                         collection_name="zipcodes")
 
             client.line_numbers = False
             client.find_one()
@@ -60,8 +60,8 @@ class TestShell(unittest.TestCase):
 
     def test_find(self):
         with captured_output() as (out, err):
-            client = MongoDB(database_name="demo",
-                             collection_name="zipcodes")
+            client = CLI(database_name="demo",
+                         collection_name="zipcodes")
             client.pretty_print = False
             client.paginate = False
             client.line_numbers = False
@@ -72,7 +72,7 @@ class TestShell(unittest.TestCase):
 
     def test_insert_one(self):
         with captured_output() as (out, err):
-            client = MongoDB()
+            client = CLI()
             now = datetime.utcnow()
             client.insert_one({"ts": now})
             self.assertTrue(client.collection.find_one({"ts": now}))
@@ -81,7 +81,7 @@ class TestShell(unittest.TestCase):
 
     def test_insert_many(self):
         with captured_output() as (out, err):
-            client = MongoDB()
+            client = CLI()
             many = [{"a": 1}, {"a": 1}, {"a": 3}]
             client.insert_many(many)
             self.assertTrue(client.collection.find_one({"a": 3}))
@@ -91,14 +91,14 @@ class TestShell(unittest.TestCase):
 
     def test_aggregate(self):
         with captured_output() as (out, err):
-            client = MongoDB()
+            client = CLI()
             client.insert_many([{"a": 1}, {"a": 1}, {"a": 3}])
             doc = client.collection.find_one({"a": 3})
             client.aggregate([{"$match": {"a": 3}}])
             self.assertTrue(str(doc["_id"]) in out.getvalue())
 
     def test_database(self):
-        client = MongoDB()
+        client = CLI()
         client.database = "test"
         client.collection = "jdrumgoole"
         client.insert_one({"this is": "a test"})
@@ -109,14 +109,14 @@ class TestShell(unittest.TestCase):
         self.assertEqual(doc, {"this is": "a test"})
         client.drop_collection(confirm=False)
 
-        client = MongoDB()
+        client = CLI()
         client.collection = "test.jdrumgoole"
         self.assertEqual(client.collection_name, "jdrumgoole")
         self.assertEqual(client.database_name, "test")
         self.assertEqual(client.collection.name, "jdrumgoole")
         self.assertEqual(client.database.name, "test")
 
-        client = MongoDB()
+        client = CLI()
         client.database = "test"
         client.collection = "jdrumgoole"
         self.assertEqual(client.collection_name, "jdrumgoole")
@@ -130,7 +130,7 @@ class TestShell(unittest.TestCase):
         return client
 
     def test_collection_property(self):
-        client = MongoDB()
+        client = CLI()
         client.collection = "newdb.jdrumgoole"
         self.assertEqual(client.collection.name, "jdrumgoole")
         self.assertEqual(client.database.name, "newdb")
@@ -147,7 +147,6 @@ class TestShell(unittest.TestCase):
 
         self.assertRaises(ShellError, TestShell.set_collection, client, "new$db.jdrumgoole")
         self.assertRaises(ShellError, TestShell.set_collection, client, "newdb.jdr$umgoole")
-
 
 
 if __name__ == '__main__':

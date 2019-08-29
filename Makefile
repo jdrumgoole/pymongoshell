@@ -7,14 +7,32 @@
 ATLAS_HOSTS="demodata-shard-0/demodata-shard-00-00-rgl39.mongodb.net:27017,demodata-shard-00-01-rgl39.mongodb.net:27017,demodata-shard-00-02-rgl39.mongodb.net:27017"
 PYTHON=python
 
+start_windows_server:
+	@mkdir -p data
+	@rm -rf mongod.log
+	@if [ -f "mongod.pid" ]; then\
+		echo "mongod is already running PID=`cat mongod.pid`";\
+	else\
+		echo "starting mongod";\
+		"mongod --dbpath ./data --pidfilepath mongod.pid --logpath mongod.log" 2>&1 > /dev/null;\
+		echo "Process ID=`cat mongod.pid`";\
+	fi
+
+stop_windows_server:
+	@if [ -f "mongod.pid" ]; then\
+		kill `cat mongod.pid`;\
+		echo "killing mongod process `cat mongod.pid`";\
+		rm mongod.pid;\
+	fi;
+
 start_server:
 	@mkdir -p data
 	@rm -rf mongod.log
-	@if [ -f "/tmp/mongod.pid" ]; then\
+	@if [ -f "mongod.pid" ]; then\
 		echo "mongod is already running PID=`cat /tmp/mongod.pid`";\
 	else\
 		echo "starting mongod";\
-		mongod --dbpath ./data --pidfilepath /tmp/mongod.pid --logpath mongod.log 2>&1 > /dev/null;\
+		mongod --dbpath ./data --fork --pidfilepath mongod.pid --logpath mongod.log 2>&1 > /dev/null;\
 		echo "Process ID=`cat /tmp/mongod.pid`";\
 	fi;
 #		echo "mongod is already running on port `cat /tmp/mongod.pid`"\
@@ -25,9 +43,9 @@ start_server:
 #	fi;
 
 stop_server:
-	@if [ -f "/tmp/mongod.pid" ]; then\
-		kill `cat /tmp/mongod.pid`;\
-		echo "killing mongod process `cat /tmp/mongod.pid`";\
+	@if [ -f "mongod.pid" ]; then\
+		kill `cat mongod.pid`;\
+		echo "killing mongod process `cat mongod.pid`";\
 		rm /tmp/mongod.pid;\
 	fi;
 
