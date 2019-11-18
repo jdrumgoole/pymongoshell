@@ -6,10 +6,11 @@ Created on 22 Jun 2016
 
 #import pprint
 import pymongo
+from pymongo import results
 import pprint
 import sys
 from mongodbshell.pager import Pager
-
+from mongodbshell.version import VERSION
 
 class ShellError(ValueError):
     pass
@@ -46,7 +47,7 @@ class CLI:
         :param mongodb_uri: A properly formatted MongoDB URI
         :param *args, *kwargs : Passed through to MongoClient
 
-        >>> from mongodbshell import MongoDB
+        >>> from mongodbshell import CLI
         >>> client = CLI()
         >>> client.database = "demo"
         >>> client.collection = "zipcodes"
@@ -77,6 +78,10 @@ class CLI:
         self._pager = Pager()
 
         self._overlap = 0
+
+    @property
+    def version(self):
+        print(f"mongodbshell {VERSION}")
 
     @staticmethod
     def valid_mongodb_name(name):
@@ -234,6 +239,32 @@ class CLI:
         # print(f"database.collection: '{self.database.name}.{self.collection.name}'")
         result = self.collection.insert_many(*args, **kwargs)
         return result.inserted_ids
+
+    def update_one(self, *args, **kwargs):
+        """
+        Run the pymongo update_one against the default database and collection
+        and return the upserted ID.
+
+        :param args:
+        :param kwargs:
+        :return: updateResult
+        """
+        result = self.collection.update_one(*args, **kwargs)
+        return result.modified_count
+
+    def update_many(self, *args, **kwargs):
+        """
+        Run the pymongo update_many against the default database and collection
+        and return the list of upserted IDs.
+
+        :param args:
+        :param kwargs:
+        :return: upsertedResult.
+        """
+
+        result = self.collection.update_many(*args, **kwargs)
+
+        return result.modified_count
 
     def delete_one(self, *args, **kwargs):
         """
@@ -413,9 +444,6 @@ class CLI:
             self._output_file = None
         else:
             self._output_filename = filename
-
-
-
 
 
     def pager(self, lines:list):

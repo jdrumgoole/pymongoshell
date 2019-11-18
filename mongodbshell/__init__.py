@@ -41,6 +41,6 @@ This will give you a prebuilt :py:class:`~MongoDBShell.MongoDB` object.
 
 """
 
-from . import cli
+from mongodbshell.cli import CLI
 
-client = cli.CLI()
+client = CLI()
