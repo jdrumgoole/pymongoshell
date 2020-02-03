@@ -140,7 +140,7 @@ class CLI:
 
     def _set_collection(self, name):
         if "." in name:
-            database_name, dot, collection_name = name.partition(".")
+            database_name, _, collection_name = name.partition(".")
             if self.valid_mongodb_name(database_name):
                 if self.valid_mongodb_name(collection_name):
                     self._database = self._client[database_name]
@@ -341,7 +341,6 @@ class CLI:
         for db_name in db_list:
             db = self.client.get_database(db_name)
             for col_name in db.list_collection_names():
-                size = db[col_name].g
                 yield f"{db_name}.{col_name}"
 
     def list_collection_names(self,database_name=None):
@@ -518,7 +517,7 @@ class CLI:
         #     if self._output_file:
         #         self._output_file.close()
 
-        self._pager.page_lines(lines)
+        self._pager.paginate_lines(lines)
 
     def doc_to_lines(self, doc, format_func=None):
         """
