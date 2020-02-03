@@ -95,3 +95,6 @@ ENV/
 #idea
 .DS_Store
 .idea/
+
+# MongoDB
+data/
