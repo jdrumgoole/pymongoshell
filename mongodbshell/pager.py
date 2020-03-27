@@ -1,10 +1,16 @@
 import shutil
 import pprint
-
+from datetime import datetime
 
 class QuitPaginateException(Exception):
     pass
 
+
+class PaginationError(Exception):
+    pass
+
+class FileNotOpenError(Exception):
+    pass
 
 class LineNumbers:
     """
@@ -28,7 +34,7 @@ class LineNumbers:
     @line_numbers.setter
     def line_number(self, line_number: int):
         """
-        :type line_numbers: int
+        :type line_number: int
         """
         self._line_number = line_number
 
@@ -67,9 +73,10 @@ class Pager:
 
     def __init__(self,
                  paginate: bool = True,
-                 paginate_prompt: str ="Hit Return to continue (q or quit to exit)",
+                 paginate_prompt: str = "Hit Return to continue (q or quit to exit)",
                  output_filename: str = None,
-                 line_numbers: bool= True ):
+                 line_numbers: bool = True,
+                 pretty_print: bool = True):
         """
 
         :param paginate: paginate at terminal boundaries
@@ -84,6 +91,7 @@ class Pager:
         self._output_file = None
         self._line_numbers = line_numbers
         self._paginate_prompt = paginate_prompt
+        self._pretty_print = pretty_print
 
         assert type(paginate_prompt) is str
 
@@ -91,10 +99,57 @@ class Pager:
     def line_numbers(self):
         return self._line_numbers
 
-    def prefix(self, number):
+    @staticmethod
+    def prefix(number):
         return LineNumbers.prefix(number)
 
-    def split_lines(self, line: str, width: int = 80, line_number:int=0) -> list:
+    @property
+    def output_file(self):
+        return self._output_filename
+
+    @output_file.setter
+    def output_file(self, name):
+        self.open(name)
+
+    @property
+    def paginate(self):
+        return self._paginate
+
+    @paginate.setter
+    def paginate(self,state):
+        self._paginate = state
+
+    @property
+    def pretty_print(self):
+        return self._pretty_print
+
+    @pretty_print.setter
+    def pretty_print(self,state):
+        self._pretty_print = state
+
+    def close(self):
+        if self._output_file and not self._output_file.closed:
+            self._output_file.write(f"# closing '{self._output_filename}' {datetime.utcnow()}\n")
+            self._output_file.close()
+            self._output_file = None
+
+    def open(self, name):
+        self.close()
+        if name:
+            self._output_file = open(name, "w+")
+            self._output_filename = name
+            self._output_file.write(f"# opening '{name}' {datetime.utcnow()}\n")
+            self._output_file.flush()
+        self._output_filename = name
+
+    def write_file(self, s):
+        if self._output_file:
+            self._output_file.write(s)
+            self._output_file.flush()
+        else:
+            raise FileNotOpenError()
+
+    def line_to_paragraph(self, line: str, width: int = 80, line_number: int = 0) -> list:
         """
         Take a line and split into separate lines at width boundaries
         also if self.line_numbers > 0 then add the defined line number prefix
@@ -102,14 +157,14 @@ class Pager:
 
         :param line: A string of input
         :param width: the size of the terminal in columns
-        :param line_numbers: Start incrementing line numbers from this number.
+        :param line_number: Start incrementing line numbers from this number.
         :return: A list of strings split at width boundaries from line
         """
         lines: list = []
         prefix = self.prefix(line_number)
         prefix_size = len(prefix)
 
-        while len(line) + prefix_size > width:
+        while prefix_size + len(line) > width:
 
             if prefix_size < width:
                 segment: str = prefix + line[0:width - prefix_size]
@@ -149,62 +204,78 @@ class Pager:
         pretty printed with `pprint`. If it is off then the output is just
         written to the screen.
 
+
         :param lines:
         :return: paginated output
         """
         try:
-
             if self._output_filename:
                 self._output_file = open(self._output_filename, "a+")
 
-            output_lines =[]
+            output_lines = []
             prompt_lines = []
-            residue_lines = []
+            overflow_lines = []
             if self._line_numbers:
                 line_number = 1
             else:
                 line_number = 0
 
             for l in lines:
+                # a line can be less than terminal width  - line number width. Just output it.
+                # a line can be more than terminal width - line number width. Output the line number
+                # and the line[0:terminal_width - line_number_width].
                 if self._output_file:
                     self._output_file.write(f"{l}\n")
                     self._output_file.flush()
 
                 if self._paginate:
                     terminal_columns, terminal_lines = shutil.get_terminal_size(fallback=(80, 24))
-                    prompt_lines = self.split_lines(self._paginate_prompt,
-                                                    terminal_columns)  # No line numbers
+                    if terminal_lines < 2:
+                        raise PaginationError("Only 1 display line for output, I need at least two")
 
-                    additional_lines = residue_lines + self.split_lines(l, terminal_columns, line_number)
-                    #print(f"{additional_lines}")
-                    line_number = line_number + len(additional_lines)
-                    buffer_length = len(output_lines) + len(additional_lines)
+                    # is the pagination prompt wider than the screen? If it is then we need to
+                    # fold it into a number of lines. This will be subtracted from the available
+                    # vertical display real estate.
+                    # We calculate the prompt size first so we know how many lines are left from
+                    # program output. Probably not a good idea to make your prompt longer than
+                    # 80 columns.
+                    prompt_lines = self.line_to_paragraph(self._paginate_prompt,
+                                                          terminal_columns)  # No line numbers
+
+                    multi_line = overflow_lines + self.line_to_paragraph(l, terminal_columns, line_number)
+                    overflow_lines = []
+                    # print(f"{multi_line}")
+                    line_number = line_number + len(multi_line)
+                    buffer_length = len(output_lines) + len(multi_line)
                     terminal_lines = terminal_lines - len(prompt_lines)  # leave room to output prompt
 
                     if buffer_length < terminal_lines:
-                        output_lines.extend(additional_lines)
+                        output_lines.extend(multi_line)
                         continue
                     if buffer_length == terminal_lines:
-                        output_lines.extend(additional_lines)
+                        output_lines.extend(multi_line)
                     elif buffer_length > terminal_lines:
-                        residue = buffer_length - terminal_lines
-                        output_lines.extend(additional_lines[0:residue])
-                        residue_lines = additional_lines[residue:]
+                        overflow = buffer_length - terminal_lines
+                        output_lines.extend(multi_line[0:overflow])
+                        overflow_lines = multi_line[overflow:]
 
                     for data in output_lines:
                         print(f"{data}")
-                    for i, prompt in enumerate(prompt_lines, 1):
+
+                    #
+                    # Output potentially multi-line prompt string.
+                    #
+                    for i, line_counter in enumerate(prompt_lines, 1):
                         if i == len(prompt_lines):
-                            print(f"{prompt}", end="")
+                            print(f"{line_counter}", end="")
                         else:
-                            print(f"{prompt}")
-                        user_input = input()
-                        if user_input.lower().strip() in ["q", "quit", "exit"]:
-                            raise QuitPaginateException
+                            print(f"{line_counter}")
+                    user_input = input()
+                    if user_input.lower().strip() in ["q", "quit", "exit"]:
+                        raise QuitPaginateException
                     output_lines = []
                 else:
-                    for line in additional_lines:
-                        print(f"{line}")
+                    print(l)
             # if self._paginate:
             #         user_input = input()
             #         if user_input.lower().strip() in ["q", "quit", "exit"]:
@@ -222,19 +293,29 @@ class Pager:
             if self._output_file:
                 self._output_file.close()
 
-    def doc_to_lines(self, doc, format_func=None):
+    def dict_to_lines(self, d, format_func=None):
         """
         Generator that converts a doc to a sequence of lines.
-        :param doc: A dictionary
+        :param d: A dictionary
         :param format_func: customisable formatter defaults to pformat
         :return: a generator yielding a line at a time
         """
         if format_func:
-            for l in format_func(doc).splitlines():
+            for l in format_func(d).splitlines():
                 yield l
-        elif self.pretty_print:
-            for l in pprint.pformat(doc).splitlines():
+        elif self._pretty_print:
+            for l in pprint.pformat(d).splitlines():
                 yield l
         else:
-            for l in str(doc).splitlines():
+            for l in str(d).splitlines():
                 yield l
+
+    def paginate_doc(self, doc):
+        return self.paginate_lines(self.dict_to_lines(doc))
+
+    def __del__(self):
+        # if self._output_file:
+        #     print(f"__del__ file closed: {self._output_file.closed}")
+        # else:
+        #     print("__del__ output_file is None")
+        self.close()

@@ -55,7 +55,7 @@ test: start_server get_zipcode_data
 prod_build:clean  sdist
 	twine upload --verbose --repository-url https://upload.pypi.org/legacy/ dist/* -u jdrumgoole
 
-test_build:test sdist
+test_build: clean sdist
 	twine upload --verbose --repository-url https://test.pypi.org/legacy/ dist/* -u jdrumgoole
 
 sdist:
@@ -66,12 +66,7 @@ clean:
 	${PYTHON} ./mongodbshell/drop_collection.py
 
 get_zipcode_data:
-	@if ! `./mongodbshell/demo_exists.py`; then\
-		if [ ! -f "zipcodes.mdp.gz" ]; then\
-			curl https://s3-eu-west-1.amazonaws.com/developer-advocacy-public/zipcodes.mdp.gz;\
-		fi;\
-		mongorestore --drop --gzip --archive=zipcodes.mdp.gz;\
-	fi
+	python ./mongodbshell/demo_exists.py
 
 push:
 	git add -u

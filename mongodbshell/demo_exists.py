@@ -2,6 +2,8 @@
 
 import sys
 import argparse
+import os
+import requests
 
 import pymongo
 from pymongo.errors import ConnectionFailure
@@ -30,19 +32,16 @@ if __name__ == "__main__":
 
         doc = client.admin.command('ismaster')
         if doc:
-            if args.database in client.list_database_names():
-                if args.collection in client[args.database].list_collection_names():
-                    #print("'{args.collection}' exists")
-                    exit_code=0
-                else:
-                    #print("'{args.database}.{args.collection}' doesn't exist")
-                    exit_code=1
+            if not args.database in client.list_database_names()  or \
+                    not args.collection in client[args.database].list_collection_names():
+                print("Retrieving file from S3")
+                archive_file = requests.get("https://s3-eu-west-1.amazonaws.com/developer-advocacy-public/zipcodes.mdp.gz")
 
+                open('zipcodes.mdp.gz', 'wb').write(archive_file.content)
+                print("Restoring backup to MongoDB")
+                os.system("mongorestore --drop --gzip --archive=zipcodes.mdp.gz")
             else:
-                #print(f"'{args.database}' doesn't exist")
-                exit_code=1
-
-        sys.exit(exit_code)
+                print("demo.zipcodes is already installed")
 
     except ConnectionFailure:
-        sys.exit(1)
+        print("Couldn't connect to server on 27017")

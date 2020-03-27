@@ -2,12 +2,6 @@
 """
 MongoDBShell
 ===============
-
-Author : joe@joedrumgoole.com
-
-Follow me on twitter like `@jdrumgoole <https://twitter.com/jdrumgoole>`_. for
-updates on this package.
-
 `MongoDBShell <https://pypi.org/project/mongodbshell/>`_ is a module that
 provides more natural interaction with MongoDB via the Python shell.
 Install using `pip3` (`MongoDBShell` only supports Python 3).
@@ -17,8 +11,7 @@ Install using `pip3` (`MongoDBShell` only supports Python 3).
 To use::
 
     >>> import mongodbshell
-    >>> client = mongodbshell.MongoDB()
-    >>> client.collection="test.test"
+    >>> client = mongodbshell.MongoClient() # assumes a local mongod running on port 27017
     >>> client
     mongodbshell.MongoDB('test', 'test', 'mongodb://localhost:27017')
     >>> client.insert_one({"msg" : "MongoDBShell is great"})
@@ -39,8 +32,10 @@ To use::
 
 This will give you a prebuilt :py:class:`~MongoDBShell.MongoDB` object.
 
+Author : joe@joedrumgoole.com
+
+Follow me on twitter like `@jdrumgoole <https://twitter.com/jdrumgoole>`_. for
+updates on this package.
 """
 
-from mongodbshell.cli import CLI
-
-client = CLI()
+from mongodbshell.mongoclient import MongoClient

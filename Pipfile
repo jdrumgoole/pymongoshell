@@ -15,9 +15,9 @@ setuptools = "*"
 sphinx-rtd-theme = "*"
 pymongo = "*"
 semvermanager = "*"
-mongodbshell = "*"
 
 [dev-packages]
+pylint = "*"
 
 [requires]
 python_version = "3.7"
