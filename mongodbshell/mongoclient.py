@@ -6,7 +6,9 @@ Created on 22 Jun 2016
 
 #import pprint
 import pymongo
-from pymongo.errors import OperationFailure
+import pymongo.uri_parser
+
+from pymongo.errors import OperationFailure, ServerSelectionTimeoutError, AutoReconnect
 import pprint
 import sys
 from mongodbshell.pager import Pager, FileNotOpenError
@@ -27,6 +29,22 @@ class MongoDBShellError(ValueError):
     pass
 
 
+#
+# decorator to handle exceptions
+#
+def handle_exceptions(func):
+    def function_wrapper(*args, **kwargs):
+        try:
+            func(*args, **kwargs)
+        except TypeError as e:
+            print(f"Error: {e}")
+        except ServerSelectionTimeoutError as e:
+            print(f"ServerSelectionTimeoutError: {e}")
+        except AutoReconnect as e:
+            print(f"AutoReconnect error: {e}")
+    return function_wrapper
+
+
 class MongoClient:
     """
     Simple command line MongoDB proxy for use in the Python shell.
@@ -37,6 +55,7 @@ class MongoClient:
                  database_name="test",
                  collection_name="test",
                  host="mongodb://localhost:27017",
+                 serverSelectionTimeoutMS:int=5000,
                  *args,
                  **kwargs):
 
@@ -63,10 +82,33 @@ class MongoClient:
         >>>
 
         """
+        self._banner = banner
         self._mongodb_uri = host
-        self._client = pymongo.MongoClient(host=self._mongodb_uri, *args, **kwargs)
-        self._database_name = database_name
-        self._collection_name = collection_name
+        self._client = pymongo.MongoClient(host=self._mongodb_uri, serverSelectionTimeoutMS=serverSelectionTimeoutMS, *args, **kwargs)
+        self._uri_dict = pymongo.uri_parser.parse_uri(self._mongodb_uri)
+        '''
+        {
+            'nodelist': <list of (host, port) tuples>,
+            'username': <username> or None,
+            'password': <password> or None,
+            'database': <database name> or None,
+            'collection': <collection name> or None,
+            'options': <dict of MongoDB URI options>,
+            'fqdn': <fqdn of the MongoDB+SRV URI> or None
+        }
+        '''
+        self._username = self._uri_dict['username']
+        self._password = self._uri_dict['password']
+        self._database_name = self._uri_dict['database']
+        self._collection_name = self._uri_dict['collection']
+        self._options = self._uri_dict['options']
+        self._fqdn = self._uri_dict['fqdn']
+
+        if self._database_name is None:
+            self._database_name = database_name
+        if self._collection_name is None:
+            self._collection_name = collection_name
+
         self._database = self._client[self._database_name]
         self._set_collection(collection_name)
         #
@@ -80,9 +122,10 @@ class MongoClient:
         self._pager = Pager()
 
         self._overlap = 0
-        if banner:
+        if self._banner:
             self.shell_version()
             print(f"Using collection '{self.collection_name}'")
+            print(f"Server selection timeout set to {serverSelectionTimeoutMS/1000} seconds")
 
     @staticmethod
     def shell_version():
@@ -143,7 +186,15 @@ class MongoClient:
         """
         return self._database_name
 
-    def _set_collection(self, name):
+    @handle_exceptions
+    def _set_collection(self, name:str):
+        '''
+        Set a collection name. The name parameter can be a bare
+        collection name or it can specify a database in the format
+        "<database_name>.<collection_name>".
+        :param name: The collection name
+        :return: The mongodb collection object
+        '''
         if "." in name:
             database_name, _, collection_name = name.partition(".")
             if self.valid_mongodb_name(database_name):
@@ -166,6 +217,7 @@ class MongoClient:
 
         return self._collection
 
+
     @property
     def collection(self):
         """
@@ -182,6 +234,7 @@ class MongoClient:
         return f"{self._database_name}.{self._collection_name}"
 
     @collection.setter
+    @handle_exceptions
     def collection(self, db_collection_name):
         """
         Set the default collection for the database associated with the `MongoDB`
@@ -192,6 +245,8 @@ class MongoClient:
 
         col = self._set_collection(db_collection_name)
         # print(f"Now using collection '{self.collection_name}'")
+        if self._database.list_collection_names() is None:
+            print("Info: You have specified an empty collection '{db_collection_name}'")
         return col
 
     def is_master(self):
@@ -205,19 +260,23 @@ class MongoClient:
         for i in cursor:
             yield from self.dict_to_lines(i)
 
+    @handle_exceptions
     def find(self, *args, **kwargs):
         """
         Run the pymongo find command against the default database and collection
         and paginate the output to the screen.
         """
         # print(f"database.collection: '{self.database.name}.{self.collection.name}'")
+
         self.print_cursor(self.collection.find(*args, **kwargs))
 
+    @handle_exceptions
     def find_explain(self, *args, **kwargs):
 
         explain_doc = self.collection.find(*args, **kwargs).explain()
         self._pager.paginate_doc(explain_doc)
 
+    @handle_exceptions
     def find_one(self, *args, **kwargs):
         """
         Run the pymongo find_one command against the default database and collection
@@ -489,7 +548,7 @@ class MongoClient:
             print(">> x.output_file='operations.log'")
             print(">> x.write('hello')")
 
-    def cursor_to_lines(self, cursor, format_func=None):
+    def cursor_to_lines(self, cursor:pymongo.cursor, format_func=None):
         """
         Take a cursor that returns a list of docs and returns a
         generator yield each line of each doc a line at a time.
@@ -510,9 +569,11 @@ class MongoClient:
                f"collection : '{self.collection.name}'"
 
     def __repr__(self):
-        return f"mongodbshell.MongoDB('{self.database.name}', '{self.collection.name}', '{self.uri}')"
+        return f"mongodbshell.MongoClient(banner={self._banner},\n" \
+               f"                         database_name='{self._database_name}',\n" \
+               f"                         collection_name='{self._collection_name}',\n" \
+               f"                         host= '{self._mongodb_uri}')"
 
 
     def __del__(self):
         self._pager.close()
-

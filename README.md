@@ -1,4 +1,4 @@
-# mongodbshell : A module that makes it easy to use MongoDB in the python shell
+# mongodbshell :  MongoDB in the python shell
 
 The Python shell is the ideal environment for Python developers to interact
 with MongoDB. However output cursors and interacting with the database requires
@@ -6,33 +6,54 @@ a little more boilerplate than is convenient. the `mongodbshell` package
 provides a set a convenience functions and objects to allow easier
 interaction with MongoDB via the Python interpreter. 
 
+The key value adds over the MongoDB Shell and just using the standard pymongo
+package are:
+
+ * Proper pagination of output including single document results
+ * Pretty printing of output
+ * Ability to stream output to a file in parallel to the screen
+ * Full compatibility with pymongo API
+ * Access to the full capabilities of the Python and iPython shells
+
 ## Installation
 
 you can install the software with pip3 or pipenv. The `mongodbshell` only
 supports Python 3. 
 
-```python
+```shell script
 $ pip3 install mongodbshell
 ```
 
-A complete set of API docs can be found on [read the docs](https://mongodbshell.readthedocs.io/en/latest/)
+A complete set of API docs can be found on 
+[read the docs](https://mongodbshell.readthedocs.io/en/latest/)
 
 ## Using the mongodbshell
 
-First we create a `MongoDB` object. This is a proxy for all the 
-commands we can run using `MongoDBShell`.
+First we create a `MongoClient` object. This is a proxy for all the 
+commands we can run using `MongoDBShell`. It is exaclty analogous to 
+the PyMongo `MongoClient` and is in fact just a shim. 
 
 ```python
->>> client=mongodbshell.MongoDB()
+>>> import mongodbshell
+>>> client = mongodbshell.MongoClient()
+mongodbshell 1.1.0b5
+Using collection 'test.test'
 >>> client
-mongodbshell.MongoDB('test', 'test', 'mongodb://localhost:27017')
+mongodbshell.MongoClient(banner=True,
+                         database_name='test',
+                         collection_name='test',
+                         host='mongodb://localhost:27017')
 ```
 
-As you can see a `MongoDB` object embeds the default database `test` and collection
-`test`. We can also access the native `MongoClient` object.
+We can also access the native `MongoClient` object by using the `.client` property.
 
+```python
+>>> client.client
+MongoClient(host=['localhost:27017'], document_class=dict, tz_aware=False, connect=True)
+>>>
+```
 
-Each `MongoDB` object has host of standard properties:
+Each `mongodbshell.MongoClient` object has host of standard properties:
 ```python
 >>> client
 mongodbshell.MongoDB('test', 'test', 'mongodb://localhost:27017')
@@ -92,7 +113,16 @@ ObjectId('5c3f4f2fc3b498d6674b08f0')
 ## Connecting to a specific MongoDB URI
 
 You can connect to a different database by using the `MongoDB` class. Here is an
-example connection to a [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) hosted datbase. 
+example connection to a [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) hosted database. 
+
+The example below is a live read-only database. You can try it out at the 
+MongoDB URI:
+
+```shell script
+"mongodb+srv://readonly:readonly@demodata-rgl39.mongodb.net/test?retryWrites=true"
+```
+
+In the `mongodbshell`:
 
 ```python
 >>> from mongodbshell import MongoDB
@@ -108,9 +138,9 @@ example connection to a [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) hos
 
 ## Looking at large volumes of output
 
-If you run a query in the python shell it will return a cursor and to look at
-the objects in the cursor you need to either write a loop to consume the cursor
-or explicitly call `next()` on each cursor item.
+If you run a query in the python shell it will return a cursor. To look at
+the objects in the cursor using the PyMongo library you need to either 
+write a loop to consume the cursor or explicitly call `next()` on each cursor item.
 
 ```python
 >>> c=pymongo.MongoClient("mongodb+srv://readonly:readonly@demodata-rgl39.mongodb.net/test?retryWrites=true")
@@ -128,7 +158,7 @@ or explicitly call `next()` on each cursor item.
 
 This is tedious and becomes even more so when the objects are large enough to
 scroll off the screen. This is not a problem with the `mongodbshell` as the
-`MongoDB` object will automatically handle pretty printing and paginating outing. 
+`MongoClient` object will automatically handle pretty printing and paginating output. 
 
 ```python
 >>> atlas.find()
