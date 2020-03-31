@@ -30,11 +30,11 @@ To use::
     {'_id': ObjectId('5cb30cfa72a4ae3b105afa1c'), 'msg': 'MongoDBShell is great'}
     >>>
 
-This will give you a prebuilt :py:class:`~MongoDBShell.MongoDB` object.
+This will give you a prebuilt :py:class:`~MongoDBShell.MongoClient` object.
 
 Author : joe@joedrumgoole.com
 
-Follow me on twitter like `@jdrumgoole <https://twitter.com/jdrumgoole>`_. for
+Follow me on twitter `@jdrumgoole <https://twitter.com/jdrumgoole>`_. for
 updates on this package.
 """
 

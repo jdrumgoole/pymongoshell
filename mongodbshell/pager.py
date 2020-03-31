@@ -185,7 +185,9 @@ class Pager:
 
         return lines
 
-    def paginate_lines(self, lines: list):
+    def paginate_lines(self, lines: list,
+                       default_terminal_lines: int = None,
+                       default_terminal_cols: int = None):
         """
         Outputs lines to a terminal. It uses
         `shutil.get_terminal_size` to determine the height of the terminal.
@@ -206,6 +208,10 @@ class Pager:
 
 
         :param lines:
+        :param default_terminal_lines: Use this to determine the screen length for testing
+        if None then use shutil.get_terminal_size().
+        :param default_terminal_cols: terminal_cols: Use this to determine the screen width for testing
+        if None then use shutil.get_terminal_size().
         :return: paginated output
         """
         try:
@@ -230,6 +236,13 @@ class Pager:
 
                 if self._paginate:
                     terminal_columns, terminal_lines = shutil.get_terminal_size(fallback=(80, 24))
+                    if default_terminal_cols:
+                        terminal_columns = default_terminal_cols
+                    if default_terminal_lines:
+                        terminal_lines = default_terminal_lines
+                    terminal_columns = terminal_columns - 1 # subtract one because we force a newline if we fill the
+                                                            # column which messes up the formatting
+
                     if terminal_lines < 2:
                         raise PaginationError("Only 1 display line for output, I need at least two")
 

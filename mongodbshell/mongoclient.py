@@ -1,8 +1,10 @@
-'''
-Created on 22 Jun 2016
+"""
+MongoClient
+====================================
+Create a MongoClient proxy with command line
+friendly API calls.
 
-@author: jdrumgoole
-'''
+"""
 
 #import pprint
 import pymongo
@@ -102,7 +104,10 @@ class MongoClient:
         self._database_name = self._uri_dict['database']
         self._collection_name = self._uri_dict['collection']
         self._options = self._uri_dict['options']
-        self._fqdn = self._uri_dict['fqdn']
+        if "fqdn" in self._uri_dict: # older versions of PyMongo don't support fqdn.
+            self._fqdn = self._uri_dict['fqdn']
+        else:
+            self._fqdn = None
 
         if self._database_name is None:
             self._database_name = database_name
@@ -255,10 +260,6 @@ class MongoClient:
         :return: the is_master result doc.
         """
         return self._pager.paginate_doc(self.database.command("ismaster"))
-
-    def _cursor_to_line(self, cursor):
-        for i in cursor:
-            yield from self.dict_to_lines(i)
 
     @handle_exceptions
     def find(self, *args, **kwargs):
@@ -447,6 +448,7 @@ class MongoClient:
         """
         Return true if user confirms yes. A correct response
         is 'y' or 'Y'. All other chars will return false.
+
         :param message: A string
         :return: bool.
         """
@@ -503,6 +505,7 @@ class MongoClient:
     def pretty_print(self):
         """
         Get and set the pretty print boolean
+
         :return: `pretty_print` (True|False)
         """
         return self.pager.pretty_print
@@ -552,8 +555,9 @@ class MongoClient:
         """
         Take a cursor that returns a list of docs and returns a
         generator yield each line of each doc a line at a time.
+
         :param cursor: A mongod cursor yielding docs (dictonaries)
-        :param format_func: A customisable format function
+        :param format_func: A customisable format function, expects and returns a doc
         :return: a generator yielding a line at a time
         """
         for doc in cursor:

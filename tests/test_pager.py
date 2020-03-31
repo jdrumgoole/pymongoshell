@@ -1,9 +1,23 @@
 import unittest
-from mongodbshell.pager import Pager
-from mongodbshell.pager import LineNumbers
+from contextlib import contextmanager
 import string
 import random
 import os
+from io import StringIO
+import sys
+from mongodbshell.pager import Pager
+from mongodbshell.pager import LineNumbers
+
+
+@contextmanager
+def captured_output():
+    new_out, new_err = StringIO(), StringIO()
+    old_out, old_err = sys.stdout, sys.stderr
+    try:
+        sys.stdout, sys.stderr = new_out, new_err
+        yield sys.stdout, sys.stderr
+    finally:
+        sys.stdout, sys.stderr = old_out, old_err
 
 def randomString(stringLength=10):
     """Generate a random string of fixed length """
@@ -48,5 +62,15 @@ class TestPager(unittest.TestCase):
         pager.close()
         self.assertTrue(find(name, rs))
         os.unlink(name)
+
+    def test_paginate(self):
+        line = '12345678901234567890' # len(line) = 20
+        lines_in= [line for x in range(3)]
+        assert len(line) == 20
+        pager = Pager()
+        print("lines in")
+        print(lines_in)
+        pager.paginate_lines(lines_in, default_terminal_cols=20, default_terminal_lines=24)
+
 if __name__ == '__main__':
     unittest.main()
