@@ -72,5 +72,8 @@ class TestPager(unittest.TestCase):
         print(lines_in)
         pager.paginate_lines(lines_in, default_terminal_cols=20, default_terminal_lines=24)
 
+    def test_list_to_line(self):
+        pager = Pager()
+        l = pager.list_to_line( [1,2,3,4] )
 if __name__ == '__main__':
     unittest.main()

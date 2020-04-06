@@ -24,9 +24,6 @@ supports Python 3.
 $ pip3 install mongodbshell
 ```
 
-A complete set of API docs can be found on 
-[read the docs](https://mongodbshell.readthedocs.io/en/latest/)
-
 ## Using the mongodbshell
 
 First we create a `MongoClient` object. This is a proxy for all the 
@@ -35,63 +32,405 @@ the PyMongo `MongoClient` and is in fact just a shim.
 
 ```python
 >>> import mongodbshell
->>> client = mongodbshell.MongoClient()
+>>> c = mongodbshell.MongoClient()
 mongodbshell 1.1.0b5
 Using collection 'test.test'
->>> client
+Server selection timeout set to 5.0 seconds
+>>> c
 mongodbshell.MongoClient(banner=True,
                          database_name='test',
                          collection_name='test',
-                         host='mongodb://localhost:27017')
+                         host= 'mongodb://localhost:27017')
+>>>
 ```
 
 We can also access the native `MongoClient` object by using the `.client` property.
 
 ```python
->>> client.client
-MongoClient(host=['localhost:27017'], document_class=dict, tz_aware=False, connect=True)
+>>> c.client
+MongoClient(host=['localhost:27017'], document_class=dict, tz_aware=False, connect=True, serverselectiontimeoutms=5000)
 >>>
 ```
 
-Each `mongodbshell.MongoClient` object has host of standard properties:
+Each `mongodbshell.MongoClient` object has a set of standard properties:
 ```python
->>> client
-mongodbshell.MongoDB('test', 'test', 'mongodb://localhost:27017')
->>> client.client
-MongoClient(host=['localhost:27017'], document_class=dict, tz_aware=False, connect=True)
->>> client.database
-Database(MongoClient(host=['localhost:27017'], document_class=dict, tz_aware=False, connect=True), 'test')
->>> client.collection
-Collection(Database(MongoClient(host=['localhost:27017'], document_class=dict, tz_aware=False, connect=True), 'test'), 'test')
->>> client.uri
+>>> c.database
+Database(MongoClient(host=['localhost:27017'], document_class=dict, tz_aware=False, connect=True, serverselectiontimeoutms=5000), 'test')
+>>> c.collection
+Collection(Database(MongoClient(host=['localhost:27017'], document_class=dict, tz_aware=False, connect=True, serverselectiontimeoutms=5000), 'test'), 'test')
+>>> c.uri
 'mongodb://localhost:27017'
+>>> c.database_name
+'test'
+>>> c.collection_name
+'test.test'
 >>>
 ```
 
 There are also convenience functions for the most popular operations:
 
+## is_master
+
+The [`is_master`](https://docs.mongodb.com/manual/reference/method/db.isMaster/) command returns the status and configuration of the Mongod server 
+and/or cluster thatthe client is connected to. This represents the typical 
+results from a single`mongod` running locally. The `is_master` is the canonical
+way to determine if a client is connected to a `mongod` or `mongod` cluster.
 ```python
->>> client.is_master()
-{'ismaster': True,
- 'localTime': datetime.datetime(2019, 1, 16, 15, 15, 41, 87000),
- 'logicalSessionTimeoutMinutes': 30,
- 'maxBsonObjectSize': 16777216,
- 'maxMessageSizeBytes': 48000000,
- 'maxWireVersion': 7,
- 'maxWriteBatchSize': 100000,
- 'minWireVersion': 0,
- 'ok': 1.0,
- 'readOnly': False}
- 
->>> mongo_client.insert_one({"name" : "Joe Drumgoole", "twitter_handle" : "@jdrumgoole"})
-ObjectId('5c3f4f2fc3b498d6674b08f0')
->>> mongo_client.find_one( {"name" : "Joe Drumgoole"})
-1    {'_id': ObjectId('5c3f4b04c3b498d4a1c6ce22'),
-2     'name': 'Joe Drumgoole',
-3     'twitter_handle': '@jdrumgoole'}
+>>> c.is_master()
+1  : {'connectionId': 9,
+2  :  'ismaster': True,
+3  :  'localTime': datetime.datetime(2020, 4, 1, 11, 32, 46, 753000),
+4  :  'logicalSessionTimeoutMinutes': 30,
+5  :  'maxBsonObjectSize': 16777216,
+6  :  'maxMessageSizeBytes': 48000000,
+7  :  'maxWireVersion': 8,
+8  :  'maxWriteBatchSize': 100000,
+9  :  'minWireVersion': 0,
+10 :  'ok': 1.0,
+11 :  'readOnly': False}
+>>>
 ```
 
-## Line Numbers on Output
+## insert_one
+The [`insert_one`](https://api.mongodb.com/python/current/api/pymongo/collection.html#pymongo.collection.Collection.insert_one) 
+operation adds a single document to the default collection
+defined by `c.collection`. 
+```
+>>> c.insert_one({"name" : "Joe Drumgoole", "twitter_handle" : "@jdrumgoole"})
+Inserted Id: 5e86748c5b17a01d0057d41a acknowledged: True
+```
+
+You should be aware that PyMongo updates the document you pass into it and adds
+an `_id` field which you can see in the result string. This `_id` is also added
+to the argument. 
+
+```python
+>>> c.insert_one(d1)
+Inserted Id: 5e8739e95b17a01d0057d41b acknowledged: True
+>>> c.find_one(d1)
+1  : {'_id': ObjectId('5e8739e95b17a01d0057d41b'), 'name': 'Heracles'}
+>>> c.insert_one(d1)
+DuplicateKeyError:
+{'code': 11000,
+ 'errmsg': 'E11000 duplicate key error collection: test.test index: _id_ dup '
+           "key: { _id: ObjectId('5e8739e95b17a01d0057d41b') }",
+ 'index': 0,
+ 'keyPattern': {'_id': 1},
+ 'keyValue': {'_id': ObjectId('5e8739e95b17a01d0057d41b')}}
+>>>
+```
+
+So if you insert a document that has just been inserted you will get a 
+**DuplicateKeyError**. To to this successfully you need to ` del d1["_id"]` 
+before doing the insert. 
+
+## insert_many
+We use the [`insert_many`](https://api.mongodb.com/python/current/api/pymongo/collection.html#pymongo.collection.Collection.insert_many)
+when we want to insert multiple documents. This is much more efficient than inserting
+individual documents as we avoid a network round trip for each document inserted.
+
+```python
+>>> d1 = {"name" : "Heracles"}
+>>> d2 = {"name" : "Orpheus"}
+>>> d3 = {"name" : "Jason"}
+>>> d4 = {"name" : "Odysseus"}
+>>> d5 = {"name" : "Achilles"}
+>>> d6 = {"name" : "Menelaeus"}
+>>> c.insert_many([d1,d2,d3,d4,d5])
+1  : [ObjectId('5e8753c05b17a04ccc18e27b'),
+2  :  ObjectId('5e8753c05b17a04ccc18e27c'),
+3  :  ObjectId('5e8753c05b17a04ccc18e27d'),
+4  :  ObjectId('5e8753c05b17a04ccc18e27e'),
+5  :  ObjectId('5e8753c05b17a04ccc18e27f')]
+>>>
+```
+## find_one
+The [`find_one`](https://api.mongodb.com/python/current/api/pymongo/collection.html#pymongo.collection.Collection.find_one)
+operation queries for a single instance of a document in the current collection
+defined by `c.collection`.
+
+Assuming we have inserted the following data:
+```python
+>>> p1 = {"name" : "Joe Drumgoole",
+...       "social": ["twitter", "instagram", "linkedin"],
+...       "mobile": "+353 87xxxxxxx",
+...       "email" : "Joe.Drumgoole@mongodb.com"}
+>>> p2 = {"name" : "Hercules Mulligan",
+...       "social": ["twitter", "linkedin"],
+...       "mobile": "+1 12345678",
+...       "email" : "Hercules.Mulligan@example.com"}
+>>> p3 = {"name" : "Aaron Burr",
+...       "social": ["instagram"],
+...       "mobile": "+1 67891011",
+...       "email" : "Aaron.Burr@example.com"}
+>>> c.insert_many([p1,p2,p3])
+1  : [ObjectId('5e8759c55b17a04ccc18e280'),
+2  :  ObjectId('5e8759c55b17a04ccc18e281'),
+3  :  ObjectId('5e8759c55b17a04ccc18e282')]
+```
+
+Lets find *Hercules Mulligan*. 
+```
+>>> c.find_one({"name" : "Hercules Mulligan"})
+1  : {'_id': ObjectId('5e8759c55b17a04ccc18e281'),
+2  :  'email': 'Hercules.Mulligan@example.com',
+3  :  'mobile': '+1 12345678',
+4  :  'name': 'Hercules Mulligan',
+5  :  'social': ['twitter', 'linkedin']}
+>>>
+```
+
+The `find_one` command will do what it says on the tin. Find the first element of 
+any search in [natural order](https://docs.mongodb.com/manual/reference/glossary/#term-natural-order).
+It will only ever return one document. In order to return a set of documents we 
+need `find`.
+
+##find
+[`find`](https://api.mongodb.com/python/current/api/pymongo/collection.html#pymongo.collection.Collection.find) 
+will return the complete set of documents that match a query. These documents 
+are returned in a [`cursor`](https://api.mongodb.com/python/2.8/api/pymongo/cursor.html) 
+object. The PyMongo cursor is a standard python iterator. However to iterate
+this cursor in the shell would be a tedious process of issuing `next()` calls or
+writing your own `for` loop. The `mongodbshell` automatically prints out the 
+results of the cursors returned by any shell commmand. The class comes with a
+number of default settings.
+
+```python
+>>> c.paginate
+True
+>>> c.pretty_print
+True
+>>> c.line_numbers
+True
+>>>
+```
+
+### Paginate
+Pagination ensures that the results of the output don't scroll off the screen. 
+The pagination uses the screen dimensions to properly format and wrap the output
+so that regardless of screen size changes the output can always be viewed. The 
+viewport is recalcuated dynamically so the user can change the terminal window
+size while paging throughout. Pagination can be turned off by setting `paginate`
+to false.
+```python
+>>> c.paginate=False
+>>> c.paginate
+False
+```
+
+### pretty_print
+Pretty printing is used to ensure that the JSON documents output are properly
+formatted and easy to read. For small documents turning pretty printing off will
+result in the documents printing on a single line which can sometimes be easier
+to read.
+
+To turn off `pretty_print` just set the value to `False`.
+```python
+>>> c.pretty_print=False
+>>>
+```
+### line_numbers
+Line numbers are added by default to allow a user to keep track of location
+in a large stream output. Similarily to the other properties `line_numbers`
+can be toggled on and off by settting the flag.
+```python
+>>> c.line_numbers=False
+>>>
+```
+
+## Find Examples
+
+### Find all documents
+```python
+>>> c.find()
+1  : {'_id': ObjectId('5e8752f35b17a01d0057d423'), 'name': 'Heracles'}
+2  : {'_id': ObjectId('5e8752f35b17a01d0057d424'), 'name': 'Orpheus'}
+3  : {'_id': ObjectId('5e8752f35b17a01d0057d425'), 'name': 'Jason'}
+4  : {'_id': ObjectId('5e8752f35b17a01d0057d426'), 'name': 'Odysseus'}
+5  : {'_id': ObjectId('5e8752f35b17a01d0057d427'), 'name': 'Achilles'}
+6  : {'_id': ObjectId('5e8753c05b17a04ccc18e27b'), 'name': 'Heracles'}
+7  : {'_id': ObjectId('5e8753c05b17a04ccc18e27c'), 'name': 'Orpheus'}
+8  : {'_id': ObjectId('5e8753c05b17a04ccc18e27d'), 'name': 'Jason'}
+9  : {'_id': ObjectId('5e8753c05b17a04ccc18e27e'), 'name': 'Odysseus'}
+10 : {'_id': ObjectId('5e8753c05b17a04ccc18e27f'), 'name': 'Achilles'}
+11 : {'_id': ObjectId('5e8759c55b17a04ccc18e280'),
+12 :  'email': 'Joe.Drumgoole@mongodb.com',
+13 :  'mobile': '+353 87xxxxxxx',
+14 :  'name': 'Joe Drumgoole',
+15 :  'social': ['twitter', 'instagram', 'linkedin']}
+16 : {'_id': ObjectId('5e8759c55b17a04ccc18e281'),
+17 :  'email': 'Hercules.Mulligan@example.com',
+18 :  'mobile': '+1 12345678',
+19 :  'name': 'Hercules Mulligan',
+20 :  'social': ['twitter', 'linkedin']}
+21 : {'_id': ObjectId('5e8759c55b17a04ccc18e282'),
+22 :  'email': 'Aaron.Burr@example.com',
+23 :  'mobile': '+1 67891011',
+24 :  'name': 'Aaron Burr',
+25 :  'social': ['instagram']}
+>>>
+```
+### Find all documents with an instagram social setting
+
+Note that MongoDB knows to look inside an array when the target
+field is an array.
+
+>>> c.find({'social':'instagram'})
+1  : {'_id': ObjectId('5e8759c55b17a04ccc18e280'),
+2  :  'email': 'Joe.Drumgoole@mongodb.com',
+3  :  'mobile': '+353 87xxxxxxx',
+4  :  'name': 'Joe Drumgoole',
+5  :  'social': ['twitter', 'instagram', 'linkedin']}
+6  : {'_id': ObjectId('5e8759c55b17a04ccc18e282'),
+7  :  'email': 'Aaron.Burr@example.com',
+8  :  'mobile': '+1 67891011',
+9  :  'name': 'Aaron Burr',
+10 :  'social': ['instagram']}
+>>>
+>
+## coll_stats 
+The [`coll_stats`](https://docs.mongodb.com/manual/reference/command/collStats/)
+command returns collection stats for the current collection defined by `c.collection`.
+There is no directly analogous command in PyMongo. In instead it is constructed
+using the [`command`](https://api.mongodb.com/python/current/api/pymongo/database.html#pymongo.database.Database.command) operation. 
+function in PyMongo.
+
+## command
+Many admin operations in MongoDB are too esoteric to warrant a specific API call in the
+driver. For these operations we support the generic 
+[`command`](https://api.mongodb.com/python/current/api/pymongo/database.html#pymongo.database.Database.command) 
+option. 
+```python
+>>> c.command('buildinfo')
+1  : {'allocator': 'tcmalloc',
+2  :  'bits': 64,
+3  :  'buildEnvironment': {'cc': 'cl: Microsoft (R) C/C++ Optimizing Compiler '
+4  :                             'Version 19.16.27032.1 for x64',
+5  :                       'ccflags': '/nologo /EHsc /W3 /wd4068 /wd4244 /wd4267 '
+6  :                                  '/wd4290 /wd4351 /wd4355 /wd4373 /wd4800 '
+7  :                                  '/wd5041 /wd4291 /we4013 /we4099 /we4930 /WX '
+8  :                                  '/errorReport:none /MD /O2 /Oy- /bigobj '
+9  :                                  '/utf-8 /permissive- /Zc:__cplusplus '
+10 :                                  '/Zc:sizedDealloc /volatile:iso '
+11 :                                  '/diagnostics:caret /std:c++17 /Gw /Gy '
+12 :                                  '/Zc:inline',
+13 :                       'cxx': 'cl: Microsoft (R) C/C++ Optimizing Compiler '
+14 :                              'Version 19.16.27032.1 for x64',
+15 :                       'cxxflags': '/TP',
+16 :                       'distarch': 'x86_64',
+17 :                       'distmod': '2012plus',
+18 :                       'linkflags': '/nologo /DEBUG /INCREMENTAL:NO '
+19 :                                    '/LARGEADDRESSAWARE /OPT:REF',
+20 :                       'target_arch': 'x86_64',
+21 :                       'target_os': 'windows'},
+22 :  'debug': False,
+23 :  'gitVersion': 'a4b751dcf51dd249c5865812b390cfd1c0129c30',
+24 :  'javascriptEngine': 'mozjs',
+25 :  'maxBsonObjectSize': 16777216,
+26 :  'modules': [],
+27 :  'ok': 1.0,
+28 :  'openssl': {'running': 'Windows SChannel'},
+29 :  'storageEngines': ['biggie', 'devnull', 'ephemeralForTest', 'wiredTiger'],
+30 :  'sysInfo': 'deprecated',
+31 :  'targetMinOS': 'Windows 7/Windows Server 2008 R2',
+32 :  'version': '4.2.0',
+33 :  'versionArray': [4, 2, 0, 0]}
+>>>
+```
+
+## count_documents
+To accurately count a number of documents in a collection we can use the 
+[`count_documents`](https://api.mongodb.com/python/current/api/pymongo/collection.html#pymongo.collection.Collection.count_documents)
+operation. You can apply a filter to limit the number of documents returned.
+
+In this example lets connect to a [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) 
+database hosted in the cloud. 
+```python
+c=mongodbshell.MongoClient("mongodb+srv://readonly:readonly@demodata-rgl39.mongodb.net/test?retryWrites=true")
+mongodbshell 1.1.0b5
+Using collection 'test.test'
+Server selection timeout set to 5.0 seconds
+>>> c.collection="demo.zipcodes"
+>>> c.count_documents()
+29350
+>>> c.count_documents({"city" : "NEW YORK"})
+40
+>>>
+```
+This tells us there are 29350 zip codes in the USA and 49 in New York. This is an
+old data set so those numbers may not be quite up to date with the latest
+US zipcodes. 
+
+
+## aggregate
+The [`aggregate`](https://docs.mongodb.com/manual/aggregation/) command allows 
+users to submit a list of 
+[`aggregation operations`](https://docs.mongodb.com/manual/reference/operator/aggregation/) 
+that will be processed in sequence on the server.
+
+In this example lets connect to a [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) 
+database hosted in the cloud. We will calculate the total zipcodes in New York
+but this time we will use aggregation.
+
+```python
+c=mongodbshell.MongoClient("mongodb+srv://readonly:readonly@demodata-rgl39.mongodb.net/test?retryWrites=true")
+mongodbshell 1.1.0b5
+Using collection 'test.test'
+Server selection timeout set to 5.0 seconds
+>>> c.collection="demo.zipcodes"
+>>> c.aggregate([{"$match" : {"city": "NEW YORK"}}, {"$count": "NYC_zipcodes_total"}])
+1  : {'NYC_zipcodes_total': 40}
+>>>
+```
+This is identical to the `count_documents` example above. To show the power of
+the aggregation framework let's use it to find the population of each of the zipcodes
+in New York city.
+
+```python
+>>> c.aggregate([{"$match" : {"city": "NEW YORK"}}, {"$group" : { "_id":"$_id", "zipcode_total" : { "$sum" : "$pop" }}}])
+1  : {'_id': '10020', 'zipcode_total': 393}
+2  : {'_id': '10036', 'zipcode_total': 16748}
+3  : {'_id': '10012', 'zipcode_total': 26365}
+4  : {'_id': '10030', 'zipcode_total': 21132}
+5  : {'_id': '10039', 'zipcode_total': 25293}
+6  : {'_id': '10003', 'zipcode_total': 51224}
+7  : {'_id': '10009', 'zipcode_total': 57426}
+8  : {'_id': '10006', 'zipcode_total': 119}
+9  : {'_id': '10026', 'zipcode_total': 28453}
+10 : {'_id': '10007', 'zipcode_total': 3374}
+11 : {'_id': '10010', 'zipcode_total': 24907}
+12 : {'_id': '10037', 'zipcode_total': 14982}
+13 : {'_id': '10128', 'zipcode_total': 52311}
+14 : {'_id': '10280', 'zipcode_total': 5574}
+15 : {'_id': '10011', 'zipcode_total': 46560}
+16 : {'_id': '10028', 'zipcode_total': 42757}
+17 : {'_id': '10035', 'zipcode_total': 28099}
+18 : {'_id': '10023', 'zipcode_total': 57385}
+19 : {'_id': '10025', 'zipcode_total': 100027}
+20 : {'_id': '10027', 'zipcode_total': 54631}
+21 : {'_id': '10022', 'zipcode_total': 31870}
+22 : {'_id': '10033', 'zipcode_total': 58648}
+23 : {'_id': '10019', 'zipcode_total': 36602}
+24 : {'_id': '10034', 'zipcode_total': 41131}
+25 : {'_id': '10017', 'zipcode_total': 12465}
+26 : {'_id': '10005', 'zipcode_total': 202}
+27 : {'_id': '10002', 'zipcode_total': 84143}
+28 : {'_id': '10032', 'zipcode_total': 61332}
+29 : {'_id': '10044', 'zipcode_total': 8190}
+30 : {'_id': '10018', 'zipcode_total': 4834}
+31 : {'_id': '10021', 'zipcode_total': 106564}
+32 : {'_id': '10016', 'zipcode_total': 51561}
+33 : {'_id': '10038', 'zipcode_total': 14015}
+34 : {'_id': '10040', 'zipcode_total': 39780}
+35 : {'_id': '10013', 'zipcode_total': 21860}
+36 : {'_id': '10029', 'zipcode_total': 74643}
+37 : {'_id': '10031', 'zipcode_total': 55989}
+38 : {'_id': '10024', 'zipcode_total': 65141}
+39 : {'_id': '10014', 'zipcode_total': 31147}
+40 : {'_id': '10001', 'zipcode_total': 18913}
+>>>
+```
+## Line Numbers on Output 
 
 Line numbers are added to output by default. You can turn off line numbers by
 setting the `line_numbers` flag to false.

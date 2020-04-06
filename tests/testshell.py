@@ -80,9 +80,15 @@ class TestShell(unittest.TestCase):
         with captured_output() as (out, err):
             now = datetime.utcnow()
             self._client.insert_one({"ts": now})
+            doc = self._client.collection.find_one({"ts": now})
             self.assertTrue(self._client.collection.find_one({"ts": now}))
-            self._client.delete_one({"ts": now})
-            self.assertFalse(self._client.collection.find_one({"ts": now}))
+            id_str = str(doc["_id"])
+        self.assertTrue(id_str in out.getvalue())
+        self.assertTrue("True" in out.getvalue())
+
+        with captured_output() as (out, err):
+            self._client.insert_one(doc)
+        self.assertTrue("DuplicateKeyError" in err.getvalue(), err.getvalue())
         self._client.drop_collection(confirm=False)
 
     def test_insert_many(self):
@@ -177,6 +183,10 @@ class TestShell(unittest.TestCase):
         self.assertRaises(ShellError, TestShell.set_collection, client, "newdb.jdr$umgoole")
 
         client.drop_database(confirm=False)
+
+    def test_getattr(self):
+        ascending = self._client.ASCENDING
+        print(ascending)
 
 if __name__ == '__main__':
     unittest.main()

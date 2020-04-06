@@ -10,7 +10,8 @@ friendly API calls.
 import pymongo
 import pymongo.uri_parser
 
-from pymongo.errors import OperationFailure, ServerSelectionTimeoutError, AutoReconnect
+from pymongo.errors import OperationFailure, ServerSelectionTimeoutError, \
+    AutoReconnect, BulkWriteError, DuplicateKeyError
 import pprint
 import sys
 from mongodbshell.pager import Pager, FileNotOpenError
@@ -31,20 +32,49 @@ class MongoDBShellError(ValueError):
     pass
 
 
+def print_to_err(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
+
+
 #
 # decorator to handle exceptions
 #
 def handle_exceptions(func):
     def function_wrapper(*args, **kwargs):
         try:
-            func(*args, **kwargs)
+            return func(*args, **kwargs)
         except TypeError as e:
-            print(f"Error: {e}")
+            print_to_err(f"Error: {e}")
         except ServerSelectionTimeoutError as e:
-            print(f"ServerSelectionTimeoutError: {e}")
+            print_to_err(f"ServerSelectionTimeoutError: {e}")
         except AutoReconnect as e:
-            print(f"AutoReconnect error: {e}")
+            print_to_err(f"AutoReconnect error: {e}")
+        except BulkWriteError as e:
+            print_to_err(f"BulkWriteError: {e}")
+            err_str = pprint.pformat(e)
+            pprint.pprint(e.details, stream=sys.stderr)
+        except DuplicateKeyError as e:
+            print_to_err(f"DuplicateKeyError:")
+            err_str = pprint.pformat(e.details)
+            print_to_err(err_str)
+        except OperationFailure as e:
+            print_to_err(f"OperationsFailure: {e}")
+            print_to_err(e.code)
+            print_to_err(e.details)
     return function_wrapper
+
+class ErrorReporter:
+    '''
+    THis class is needed so we capture the name of the class reference
+    that was invalid. it is used by MongoClient.__setattr__.
+    '''
+
+    def __init__(self, name):
+        self._name = name
+
+    def error_msg(self, *args, **kwargs):
+        print(f"Error: '{self._name}' is not a property or function call in"
+              f"pymongo.Collection, pymongo.Database or pymongo.MongoClient")
 
 
 class MongoClient:
@@ -70,25 +100,48 @@ class MongoClient:
         :param mongodb_uri: A properly formatted MongoDB URI
         :param *args, *kwargs : Passed through to MongoClient
 
-        >>> from mongodbshell import MongoClient
-        >>> client = MongoClient()
-        >>> client.database = "demo"
-        >>> client.collection = "zipcodes"
-        >>> client.collection = "demo.zipcodes"
-        >>> client.collection = "db$.test"
-        Traceback (most recent call last):
-          File "<stdin>", line 1, in <module>
-          File "/Users/jdrumgoole/GIT/mongodbshell/mongodbshell/__init__.py", line 152, in collection
-            else:
-        mongodbshell.ShellError: 'db$' is not a valid database name
+        >>> import mongodbshell
+        >>> c = mongodbshell.MongoClient()
+        mongodbshell 1.1.0b5
+        Using collection 'test.test'
+        Server selection timeout set to 5.0 seconds
+        >>> c
+        mongodbshell.MongoClient(banner=True,
+                                 database_name='test',
+                                 collection_name='test',
+                                 host= 'mongodb://localhost:27017')
+
+        Access the internal MongoClient object:
+
+        >>> c.client
+        MongoClient(host=['localhost:27017'], document_class=dict, tz_aware=False, connect=True, serverselectiontimeoutms=5000)
         >>>
 
         """
-        self._banner = banner
-        self._mongodb_uri = host
-        self._client = pymongo.MongoClient(host=self._mongodb_uri, serverSelectionTimeoutMS=serverSelectionTimeoutMS, *args, **kwargs)
-        self._uri_dict = pymongo.uri_parser.parse_uri(self._mongodb_uri)
+
+        # We use __setattr__ so that we can protect against someone mistakenly typing a field
+        # wrong and the class just adding that field. For example you might want
+        # to define a different collection by saying
+        # >>> c=MongoClient()
+        # mongodbshell 1.1.0b5
+        # Using collection 'test.test'
+        # Server selection timeout set to 5.0 seconds
+        # >>> c.collection="demo.zipcodes"
+        # Without protection you might inadvertently say
+        # >>> c.collections="demo.zipcodes" # note the plural.
+        # With us trapping that with __setattr__ Python would just
+        # add another member to the class. The overhead of _setattr__
+        # protection is we must use the extended form to add members
+        # in the first place.
+
+        object.__setattr__(self, "_banner", banner)
+        object.__setattr__(self, "_mongodb_uri", host)
+        client = pymongo.MongoClient(host=self._mongodb_uri, serverSelectionTimeoutMS=serverSelectionTimeoutMS, *args, **kwargs)
+        object.__setattr__(self, "_client", client)
+        uri_dict = pymongo.uri_parser.parse_uri(self._mongodb_uri)
+        object.__setattr__(self, "_uri_dict", uri_dict)
         '''
+        The dict returned by parse_uri. 
         {
             'nodelist': <list of (host, port) tuples>,
             'username': <username> or None,
@@ -99,38 +152,45 @@ class MongoClient:
             'fqdn': <fqdn of the MongoDB+SRV URI> or None
         }
         '''
-        self._username = self._uri_dict['username']
-        self._password = self._uri_dict['password']
-        self._database_name = self._uri_dict['database']
-        self._collection_name = self._uri_dict['collection']
-        self._options = self._uri_dict['options']
+
+        object.__setattr__(self, "_username", self._uri_dict['username'])
+        object.__setattr__(self, "_password", self._uri_dict['password'])
+        object.__setattr__(self, "_database_name", self._uri_dict['database'])
+        object.__setattr__(self, "_collection_name", self._uri_dict['collection'])
+        object.__setattr__(self, "_options", self._uri_dict['options'])
+
         if "fqdn" in self._uri_dict: # older versions of PyMongo don't support fqdn.
+            object.__setattr__(self, "_fqdn", self._uri_dict['fqdn'])
             self._fqdn = self._uri_dict['fqdn']
         else:
-            self._fqdn = None
+            object.__setattr__(self, "_fqdn", None)
 
         if self._database_name is None:
             self._database_name = database_name
         if self._collection_name is None:
             self._collection_name = collection_name
 
-        self._database = self._client[self._database_name]
+        object.__setattr__(self, "_database", self._client[self._database_name])
+        object.__setattr__(self, "_collection", None)
         self._set_collection(collection_name)
         #
         # self._collection = self._database[self._collection_name]
-        self._output_filename = None
-        self._output_file = None
+        object.__setattr__(self, "_output_filename", None)
+        object.__setattr__(self, "_output_file", None)
+        object.__setattr__(self, "_line_numbers", True)
+        object.__setattr__(self, "_paginate", True)
+        object.__setattr__(self, "_pretty_print", True)
+        object.__setattr__(self, "_pager", Pager(line_numbers=self._line_numbers,
+                                                 pretty_print=self._pretty_print,
+                                                 paginate=self._paginate))
 
-        self._line_numbers = True
-        self._pretty_print = True
-        self._paginate = True
-        self._pager = Pager()
-
+        object.__setattr__(self, "_overlap", 0)
         self._overlap = 0
+
         if self._banner:
             self.shell_version()
             print(f"Using collection '{self.collection_name}'")
-            print(f"Server selection timeout set to {serverSelectionTimeoutMS/1000} seconds")
+            print(f"Server requests set to timeout after {serverSelectionTimeoutMS/1000} seconds")
 
     @staticmethod
     def shell_version():
@@ -206,6 +266,7 @@ class MongoClient:
                 if self.valid_mongodb_name(collection_name):
                     self._database = self._client[database_name]
                     self._database_name = database_name
+
                     self._collection = self._database[collection_name]
                     self._collection_name = collection_name
 
@@ -259,107 +320,108 @@ class MongoClient:
         Run the pymongo is_master command for the current server.
         :return: the is_master result doc.
         """
-        return self._pager.paginate_doc(self.database.command("ismaster"))
+        return self._pager.paginate_doc(self.command("ismaster"))
 
-    @handle_exceptions
-    def find(self, *args, **kwargs):
-        """
-        Run the pymongo find command against the default database and collection
-        and paginate the output to the screen.
-        """
-        # print(f"database.collection: '{self.database.name}.{self.collection.name}'")
+    # @handle_exceptions
+    # def find(self, *args, **kwargs):
+    #     """
+    #     Run the pymongo find command against the default database and collection
+    #     and paginate the output to the screen.
+    #     """
+    #     # print(f"database.collection: '{self.database.name}.{self.collection.name}'")
+    #
+    #     self.print_cursor(self.collection.find(*args, **kwargs))
 
-        self.print_cursor(self.collection.find(*args, **kwargs))
+    # @handle_exceptions
+    # def find_explain(self, *args, **kwargs):
+    #
+    #     explain_doc = self.collection.find(*args, **kwargs).explain()
+    #     self._pager.paginate_doc(explain_doc)
+    #
+    # @handle_exceptions
+    # def find_one(self, *args, **kwargs):
+    #     """
+    #     Run the pymongo find_one command against the default database and collection
+    #     and paginate the output to the screen.
+    #     """
+    #     # print(f"database.collection: '{self.database.name}.{self.collection.name}'")
+    #     self._pager.paginate_doc(self.collection.find_one(*args, **kwargs))
 
-    @handle_exceptions
-    def find_explain(self, *args, **kwargs):
-
-        explain_doc = self.collection.find(*args, **kwargs).explain()
-        self._pager.paginate_doc(explain_doc)
-
-    @handle_exceptions
-    def find_one(self, *args, **kwargs):
-        """
-        Run the pymongo find_one command against the default database and collection
-        and paginate the output to the screen.
-        """
-        # print(f"database.collection: '{self.database.name}.{self.collection.name}'")
-        self._pager.paginate_doc(self.collection.find_one(*args, **kwargs))
-
-    def insert_one(self, *args, **kwargs):
-        """
-        Run the pymongo insert_one command against the default database and collection
-        and returne the inserted ID.
-        """
-        # print(f"database.collection: '{self.database.name}.{self.collection.name}'")
-        result = self.collection.insert_one(*args, **kwargs)
-        return result.inserted_id
-
-    def insert_many(self, *args, **kwargs):
-        """
-        Run the pymongo insert_many command against the default database and collection
-        and return the list of inserted IDs.
-        """
-        # print(f"database.collection: '{self.database.name}.{self.collection.name}'")
-        result = self.collection.insert_many(*args, **kwargs)
-        return result.inserted_ids
-
-    def update_one(self, *args, **kwargs):
-        """
-        Run the pymongo update_one against the default database and collection
-        and return the upserted ID.
-
-        :param args:
-        :param kwargs:
-        :return: updateResult
-        """
-        result = self.collection.update_one(*args, **kwargs)
-        return result.modified_count
-
-    def update_many(self, *args, **kwargs):
-        """
-        Run the pymongo update_many against the default database and collection
-        and return the list of upserted IDs.
-
-        :param args:
-        :param kwargs:
-        :return: upsertedResult.
-        """
-
-        result = self.collection.update_many(*args, **kwargs)
-
-        return result.modified_count
-
-    def delete_one(self, *args, **kwargs):
-        """
-        Run the pymongo delete_one command against the default database and collection
-        and return the deleted IDs.
-        """
-        result = self.collection.delete_one(*args, **kwargs)
-        return result.raw_result
-
-    def delete_many(self, *args, **kwargs):
-        """
-        Run the pymongo delete_many command against the default database and collection
-        and return the deleted IDs.
-        """
-        result = self.collection.delete_many(*args, **kwargs)
-        return result.raw_result
-
-    def count_documents(self, filter:dict=None, *args, **kwargs):
-        """
-        Count all the documents in a collection accurately
-        """
-        if filter is None:
-            filter = {}
-        result = self.collection.count_documents(filter, *args, **kwargs)
-        return result
-
-    def aggregate(self,pipeline, session=None, **kwargs):
-        """
-        Run the aggregation pipeline
-        """
-        self.print_cursor(self.collection.aggregate(pipeline, session, **kwargs))
+    # @handle_exceptions
+    # def insert_one(self, *args, **kwargs):
+    #     """
+    #     Run the pymongo insert_one command against the default database and collection
+    #     and returne the inserted ID.
+    #     """
+    #     # print(f"database.collection: '{self.database.name}.{self.collection.name}'")
+    #     result = self.collection.insert_one(*args, **kwargs)
+    #     print(f"Inserted Id: {result.inserted_id} acknowledged: {result.acknowledged}")
+    #
+    # @handle_exceptions
+    # def insert_many(self, *args, **kwargs):
+    #     """
+    #     Run the pymongo insert_many command against the default database and collection
+    #     and return the list of inserted IDs.
+    #     """
+    #     # print(f"database.collection: '{self.database.name}.{self.collection.name}'")
+    #     result = self.collection.insert_many(*args, **kwargs)
+    #     self._pager.paginate_lines(pprint.pformat(result.inserted_ids).splitlines())
+    #
+    # def update_one(self, *args, **kwargs):
+    #     """
+    #     Run the pymongo update_one against the default database and collection
+    #     and return the upserted ID.
+    #
+    #     :param args:
+    #     :param kwargs:
+    #     :return: updateResult
+    #     """
+    #     result = self.collection.update_one(*args, **kwargs)
+    #     return result
+    #
+    # def update_many(self, *args, **kwargs):
+    #     """
+    #     Run the pymongo update_many against the default database and collection
+    #     and return the list of upserted IDs.
+    #
+    #     :param args:
+    #     :param kwargs:
+    #     :return: upsertedResult.
+    #     """
+    #
+    #     result = self.collection.update_many(*args, **kwargs)
+    #
+    #     return result
+    #
+    # def delete_one(self, *args, **kwargs):
+    #     """
+    #     Run the pymongo delete_one command against the default database and collection
+    #     and return the deleted IDs.
+    #     """
+    #     result = self.collection.delete_one(*args, **kwargs)
+    #     return result
+    # def delete_many(self, *args, **kwargs):
+    #     """
+    #     Run the pymongo delete_many command against the default database and collection
+    #     and return the deleted IDs.
+    #     """
+    #     result = self.collection.delete_many(*args, **kwargs)
+    #     return result
+    #
+    # def count_documents(self, filter:dict=None, *args, **kwargs):
+    #     """
+    #     Count all the documents in a collection accurately
+    #     """
+    #     if filter is None:
+    #         filter = {}
+    #     result = self.collection.count_documents(filter, *args, **kwargs)
+    #     return result
+    #
+    # def aggregate(self,pipeline, session=None, **kwargs):
+    #     """
+    #     Run the aggregation pipeline
+    #     """
+    #     self.print_cursor(self.collection.aggregate(pipeline, session, **kwargs))
 
     def rename(self, new_name, **kwargs):
         if not self.valid_mongodb_name(new_name):
@@ -384,7 +446,7 @@ class MongoClient:
         """
         pprint.pprint(self.database.command("dbstats"))
 
-    def collstats(self, scale=1024, verbose=False):
+    def coll_stats(self, scale=1024, verbose=False):
         """
         Run collection stats for collection.
         see https://docs.mongodb.com/manual/reference/command/collStats/
@@ -499,7 +561,8 @@ class MongoClient:
 
     @line_numbers.setter
     def line_numbers(self, state):
-        self._line_numbers = state
+        self._pager.line_numbers = state
+
 
     @property
     def pretty_print(self):
@@ -508,7 +571,7 @@ class MongoClient:
 
         :return: `pretty_print` (True|False)
         """
-        return self.pager.pretty_print
+        return self._pager.pretty_print
 
     @pretty_print.setter
     def pretty_print(self, state):
@@ -536,6 +599,7 @@ class MongoClient:
     @output_file.setter
     def output_file(self, filename):
         """
+
 
         :param filename: file to output `pager` output to.
         :return:
@@ -579,5 +643,86 @@ class MongoClient:
                f"                         host= '{self._mongodb_uri}')"
 
 
+    @staticmethod
+    def has_attr(col, name):
+        '''
+        Can't use the built in hasattr to check if name is a member
+        of a collection object as built hasattr uses getattr and in
+        the Collection object getattr is overwritten to allow collections
+        to be generated by specifying col.<name>.
+
+        :param col: a pymongo.Collection object
+        :param name: a candidate name
+        :return: the specified object or None
+        '''
+
+        if name in dir(col):
+            return getattr(col, name)
+        else:
+            return None
+
+
+    def __getattr__(self, name, *args, **kwargs):
+        '''
+        Call __getattr__ if we specify members that don't exist. The
+        goal here is to pass any function not directly implemented
+        by this class straight up to pymongo.Collection.
+
+        Here we intercept the function lookup invoked of the
+        mongodbshell.MongoClient object and use it to invoke the
+        pymongo.Collection class directly. The nested inner function
+        is required to capture the parameters correctly.
+
+        :param name: the method or property that doesn't exist.
+        :param args: args passed in by invoker
+        :param kwargs: kwargs passed in by invoker
+        :return: Results of call target method
+        '''
+        if MongoClient.has_attr(self.collection, name):
+            attr = getattr(self.collection, name)
+        elif MongoClient.has_attr(self.database, name):
+            attr = getattr(self.database, name)
+        elif MongoClient.has_attr(self.client, name):
+            attr = getattr(self.client, name)
+        else:
+            reporter = ErrorReporter(name)
+            attr = reporter.error_msg
+
+        def make_invoker(invoker):
+            @handle_exceptions
+            def inner_func(*args, **kwargs):
+                result = invoker(*args, **kwargs)
+                if type(result) in [pymongo.command_cursor.CommandCursor, pymongo.cursor.Cursor]:
+                    self.print_cursor(result)
+                elif type(result) is dict:
+                    self._pager.paginate_doc(result)
+                else:
+                    return result
+            return inner_func
+
+        if callable(attr):
+            #print(f"{attr} is callable")
+            return make_invoker(attr)
+        else:
+            print(f"returning {attr}")
+            return attr
+
+    def __setattr__(self, name, value):
+        '''
+        We override __setattr__ to allow us to assign objects that already
+        exist. This stops someone creating arbitrary class members.
+        :param name:
+        :param value:
+        :return:
+        '''
+        if hasattr(self, name):
+            object.__setattr__(self, name, value)
+        else:
+            print("Cannot set name '{name}'on object of type '{self.__class__.__name__}'")
+
     def __del__(self):
         self._pager.close()
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()

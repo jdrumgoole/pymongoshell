@@ -99,6 +99,9 @@ class Pager:
     def line_numbers(self):
         return self._line_numbers
 
+    def line_numbers(self, state):
+        self._line_numbers = state
+
     @staticmethod
     def prefix(number):
         return LineNumbers.prefix(number)
@@ -322,6 +325,17 @@ class Pager:
         else:
             for l in str(d).splitlines():
                 yield l
+
+    def list_to_line(self, l):
+        open_bracket = "["
+        close_bracket = "["
+        for i, elem in enumerate(l):
+            if i == 0:
+                elem = open_bracket + elem
+            if i == (len(l) - 1):
+                elem = elem + close_bracket
+            yield elem
+
 
     def paginate_doc(self, doc):
         return self.paginate_lines(self.dict_to_lines(doc))
