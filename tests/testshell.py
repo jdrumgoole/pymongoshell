@@ -23,17 +23,15 @@ def captured_output():
 class TestShell(unittest.TestCase):
 
     def setUp(self):
-        self._client = MongoClient(banner=False)
-
+        pass
 
     def tearDown(self):
         pass
 
     def test_Client(self):
         with captured_output() as (out, err):
-            self.assertEqual(pymongo.MongoClient(),
-                             self._client.client)
-            self.assertEqual("", err.getvalue())
+            c = MongoClient(banner=False)
+        self.assertEqual("", err.getvalue())
 
     def test_ismaster(self):
         with captured_output() as (out, err):
@@ -184,9 +182,9 @@ class TestShell(unittest.TestCase):
 
         client.drop_database(confirm=False)
 
-    def test_getattr(self):
-        ascending = self._client.ASCENDING
-        print(ascending)
+    def test_mongoclient(self):
+        client = MongoClient(banner=False)
+        client.dumbo
 
 if __name__ == '__main__':
     unittest.main()

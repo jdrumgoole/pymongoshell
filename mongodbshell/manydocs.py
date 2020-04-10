@@ -30,5 +30,10 @@ p3 = {"name" : "Aaron Burr",
       "email" : "Aaron.Burr@example.com"}
 c.insert_many([p1,p2,p3])
 c.count_documents()
+c.count_documents({"name":"Joe Drumgoole"})
 c.create_index("social")
-c.delete_index("social")
+c.drop_index("social_1")
+c.update_one({"name" : "Joe Drumgoole"}, {"$set" : {"age" : 35}})
+c.update_one({"name" : "Joe Drumgoole"}, {"$set" : {"age" : 35}})
+c.update_many({"social" : "twitter"}, {"$set" : {"followers" : 1000}})
+c=mongodbshell.MongoClient(host="mongodb+srv://readonly:readonly@covid-19.hip2i.mongodb.net/test?retryWrites=true&w=majority")

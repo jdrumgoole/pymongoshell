@@ -41,41 +41,79 @@ def print_to_err(*args, **kwargs):
 #
 def handle_exceptions(func):
     def function_wrapper(*args, **kwargs):
+        #source = f"{func.__name__}({args}, {kwargs})"
+        source = ""
         try:
             return func(*args, **kwargs)
         except TypeError as e:
-            print_to_err(f"Error: {e}")
+            print_to_err(f"Error:{source} {e}")
         except ServerSelectionTimeoutError as e:
-            print_to_err(f"ServerSelectionTimeoutError: {e}")
+            print_to_err(f"ServerSelectionTimeoutError: {source} {e}")
         except AutoReconnect as e:
-            print_to_err(f"AutoReconnect error: {e}")
+            print_to_err(f"AutoReconnect error:{source} {e}")
         except BulkWriteError as e:
-            print_to_err(f"BulkWriteError: {e}")
+            print_to_err(f"BulkWriteError:{source} {e}")
             err_str = pprint.pformat(e)
             pprint.pprint(e.details, stream=sys.stderr)
         except DuplicateKeyError as e:
-            print_to_err(f"DuplicateKeyError:")
+            print_to_err(f"DuplicateKeyError:{source}")
             err_str = pprint.pformat(e.details)
             print_to_err(err_str)
         except OperationFailure as e:
-            print_to_err(f"OperationsFailure: {e}")
+            print_to_err(f"OperationsFailure:{source} {e}")
             print_to_err(e.code)
             print_to_err(e.details)
+        except Exception as e:
+            print_to_err(f"Exception:{source} {e}")
+
     return function_wrapper
 
-class ErrorReporter:
-    '''
-    THis class is needed so we capture the name of the class reference
-    that was invalid. it is used by MongoClient.__setattr__.
-    '''
+class HandleResults:
 
-    def __init__(self, name):
-        self._name = name
+    def __init__(self, pager:Pager):
+        self._pager = Pager()
 
-    def error_msg(self, *args, **kwargs):
-        print(f"Error: '{self._name}' is not a property or function call in"
-              f"pymongo.Collection, pymongo.Database or pymongo.MongoClient")
+    def is_type(self, result):
+        return type(result) in [pymongo.results.InsertOneResult,
+                                pymongo.results.InsertManyResult,
+                                pymongo.results.UpdateResult,
+                                pymongo.results.DeleteResult,
+                                pymongo.results.BulkWriteResult
+                               ]
 
+    def handle(self, result):
+        """
+        result is a pymongo result Type.
+        """
+        if type(result) is  pymongo.results.InsertOneResult:
+            self.handle_InsertOneResult(result)
+        elif type(result) is pymongo.results.InsertManyResult:
+            self.handle_InsertManyResult(result)
+        elif type(result) is pymongo.results.UpdateResult:
+            self.handle_UpdateResult(result)
+        elif type(result) is pymongo.results.DeleteResult:
+            self.handle_DeleteResult(result)
+        elif type(result) is pymongo.results.BulkWriteResult:
+            self.handle_BulkWriteResult(result)
+        else:
+            raise TypeError(result)
+
+    def handle_InsertOneResult(self, result: pymongo.results.InsertOneResult):
+        print(f"Inserted: {result.inserted_id}")
+
+    def handle_InsertManyResult(self, result:pymongo.results.InsertManyResult):
+        doc = pprint.pformat(result.inserted_ids)
+        self._pager.paginate_lines(doc.splitlines())
+
+    def handle_UpdateResult(self, result:pymongo.results.UpdateResult):
+        self._pager.paginate_doc(result.raw_result)
+
+    def handle_DeleteResult(self, result:pymongo.results.DeleteResult):
+        self._pager.paginate_doc(result.raw_result)
+
+    def handle_BulkWriteResult(self, result:pymongo.results.BulkWriteResult):
+        doc = pprint.pformat(result.bulk_api_result)
+        self._pager.paginate_doc(doc)
 
 class MongoClient:
     """
@@ -134,6 +172,7 @@ class MongoClient:
         # protection is we must use the extended form to add members
         # in the first place.
 
+
         object.__setattr__(self, "_banner", banner)
         object.__setattr__(self, "_mongodb_uri", host)
         client = pymongo.MongoClient(host=self._mongodb_uri, serverSelectionTimeoutMS=serverSelectionTimeoutMS, *args, **kwargs)
@@ -172,6 +211,7 @@ class MongoClient:
 
         object.__setattr__(self, "_database", self._client[self._database_name])
         object.__setattr__(self, "_collection", None)
+        print(f"progress")
         self._set_collection(collection_name)
         #
         # self._collection = self._database[self._collection_name]
@@ -184,6 +224,7 @@ class MongoClient:
                                                  pretty_print=self._pretty_print,
                                                  paginate=self._paginate))
 
+        object.__setattr__(self, "_handle_result", HandleResults(self._pager))
         object.__setattr__(self, "_overlap", 0)
         self._overlap = 0
 
@@ -320,7 +361,11 @@ class MongoClient:
         Run the pymongo is_master command for the current server.
         :return: the is_master result doc.
         """
-        return self._pager.paginate_doc(self.command("ismaster"))
+        return self._pager.paginate_doc(self.database.command("ismaster"))
+
+    def count_documents(self, filter=None, *args, **kwargs):
+        filter_arg = filter or {}
+        return self.collection.count_documents(filter=filter_arg, *args, *kwargs)
 
     # @handle_exceptions
     # def find(self, *args, **kwargs):
@@ -464,11 +509,6 @@ class MongoClient:
         else:
             print(f"'{self.collection_name}'is not a valid collection")
 
-    # def __getattr__(self, item):
-    #     if hasattr(self._collection, item):
-    #         return getattr(self.collection, item)
-    #     else:
-    #         raise MongoDBShellError(f"No such item {item} in PyMongo collection object")
 
     def _get_collections(self, db_names=None):
         """
@@ -518,14 +558,15 @@ class MongoClient:
         response.upper()
         return response == "Y"
 
-    def command(self, *args, **kwargs, ):
-        try:
-            self._pager.paginate_doc(self.database.command(*args, **kwargs))
-        except OperationFailure as e:
-            print(f"Error: {e}")
+    # def command(self, *args, **kwargs, ):
+    #     try:
+    #         self._pager.paginate_doc(self.database.command(*args, **kwargs))
+    #     except OperationFailure as e:
+    #         print(f"Error: {e}")
 
     def create_index(self, name):
-        self._collection.create_index(name)
+        name = self._collection.create_index(name)
+        print(f"Created index: '{name}'")
 
     def drop_collection(self, confirm=True):
         if confirm and self.confirm_yes(f'Drop collection:{self._database_name}.{self._collection_name}'):
@@ -661,7 +702,6 @@ class MongoClient:
         else:
             return None
 
-
     def __getattr__(self, name, *args, **kwargs):
         '''
         Call __getattr__ if we specify members that don't exist. The
@@ -678,34 +718,32 @@ class MongoClient:
         :param kwargs: kwargs passed in by invoker
         :return: Results of call target method
         '''
-        if MongoClient.has_attr(self.collection, name):
-            attr = getattr(self.collection, name)
-        elif MongoClient.has_attr(self.database, name):
-            attr = getattr(self.database, name)
-        elif MongoClient.has_attr(self.client, name):
-            attr = getattr(self.client, name)
+        col_op = MongoClient.has_attr(self.collection, name)
+        if col_op is None:
+            return self.collection.__getattr__(name)
         else:
-            reporter = ErrorReporter(name)
-            attr = reporter.error_msg
+            def make_invoker(invoker):
+                if callable(invoker):
+                    @handle_exceptions
+                    def inner_func(*args, **kwargs):
+                        #print(f"inner func({args}, {kwargs})")
+                        result = invoker(*args, **kwargs)
+                        if type(result) in [pymongo.command_cursor.CommandCursor, pymongo.cursor.Cursor]:
+                            self.print_cursor(result)
+                        elif self._handle_result.is_type(result):
+                            self._handle_result.handle(result)
+                        elif type(result) is dict:
+                            self._pager.paginate_doc(result)
 
-        def make_invoker(invoker):
-            @handle_exceptions
-            def inner_func(*args, **kwargs):
-                result = invoker(*args, **kwargs)
-                if type(result) in [pymongo.command_cursor.CommandCursor, pymongo.cursor.Cursor]:
-                    self.print_cursor(result)
-                elif type(result) is dict:
-                    self._pager.paginate_doc(result)
+                        else:
+                            #(f"type result: {type(result)}")
+                            #print(f"result: {result}")
+                            return result
+                    return inner_func
                 else:
-                    return result
-            return inner_func
+                    return invoker
+            return make_invoker(col_op)
 
-        if callable(attr):
-            #print(f"{attr} is callable")
-            return make_invoker(attr)
-        else:
-            print(f"returning {attr}")
-            return attr
 
     def __setattr__(self, name, value):
         '''
