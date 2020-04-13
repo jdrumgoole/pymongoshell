@@ -10,13 +10,13 @@ friendly API calls.
 import pymongo
 import pymongo.uri_parser
 
-from pymongo.errors import OperationFailure, ServerSelectionTimeoutError, \
-    AutoReconnect, BulkWriteError, DuplicateKeyError
+
 import pprint
 import sys
 from mongodbshell.pager import Pager, FileNotOpenError
 from mongodbshell.version import VERSION
 
+from mongodbshell.errorhandling import handle_exceptions, compliant_decorator
 
 class ShellError(ValueError):
     pass
@@ -32,41 +32,7 @@ class MongoDBShellError(ValueError):
     pass
 
 
-def print_to_err(*args, **kwargs):
-    print(*args, file=sys.stderr, **kwargs)
 
-
-#
-# decorator to handle exceptions
-#
-def handle_exceptions(func):
-    def function_wrapper(*args, **kwargs):
-        #source = f"{func.__name__}({args}, {kwargs})"
-        source = ""
-        try:
-            return func(*args, **kwargs)
-        except TypeError as e:
-            print_to_err(f"Error:{source} {e}")
-        except ServerSelectionTimeoutError as e:
-            print_to_err(f"ServerSelectionTimeoutError: {source} {e}")
-        except AutoReconnect as e:
-            print_to_err(f"AutoReconnect error:{source} {e}")
-        except BulkWriteError as e:
-            print_to_err(f"BulkWriteError:{source} {e}")
-            err_str = pprint.pformat(e)
-            pprint.pprint(e.details, stream=sys.stderr)
-        except DuplicateKeyError as e:
-            print_to_err(f"DuplicateKeyError:{source}")
-            err_str = pprint.pformat(e.details)
-            print_to_err(err_str)
-        except OperationFailure as e:
-            print_to_err(f"OperationsFailure:{source} {e}")
-            print_to_err(e.code)
-            print_to_err(e.details)
-        except Exception as e:
-            print_to_err(f"Exception:{source} {e}")
-
-    return function_wrapper
 
 class HandleResults:
 
@@ -211,7 +177,6 @@ class MongoClient:
 
         object.__setattr__(self, "_database", self._client[self._database_name])
         object.__setattr__(self, "_collection", None)
-        print(f"progress")
         self._set_collection(collection_name)
         #
         # self._collection = self._database[self._collection_name]
@@ -292,7 +257,7 @@ class MongoClient:
         """
         return self._database_name
 
-    @handle_exceptions
+    @handle_exceptions("set_collection")
     def _set_collection(self, name:str):
         '''
         Set a collection name. The name parameter can be a bare
@@ -338,10 +303,15 @@ class MongoClient:
         """
         :return: The name of the default collection
         """
-        return f"{self._database_name}.{self._collection_name}"
+        if self._database_name is None:
+            return ""
+        elif self._collection_name is None:
+            return f"{self._database_name}"
+        else:
+            return f"{self._database_name}.{self._collection_name}"
 
     @collection.setter
-    @handle_exceptions
+    @handle_exceptions("collection")
     def collection(self, db_collection_name):
         """
         Set the default collection for the database associated with the `MongoDB`
@@ -673,9 +643,24 @@ class MongoClient:
 
 
     def __str__(self):
-        return f"client     : '{self.uri}'\n" +\
-               f"db         : '{self.database.name}'\n" +\
-               f"collection : '{self.collection.name}'"
+        if self._client:
+            client_str = f"'{self.uri}'"
+        else:
+            client_str = "No client created"
+
+        if self._database_name:
+            db_str     = f"'{self.database_name}'"
+        else:
+            db_str = "no database set"
+
+        if self._collection_name:
+            col_str =f"'{self.collection_name}'"
+        else:
+            col_str = "no client set"
+
+        return f"client     : {client_str}\n" +\
+               f"db         : '{db_str}'\n" +\
+               f"collection : '{col_str}'"
 
     def __repr__(self):
         return f"mongodbshell.MongoClient(banner={self._banner},\n" \
@@ -724,7 +709,7 @@ class MongoClient:
         else:
             def make_invoker(invoker):
                 if callable(invoker):
-                    @handle_exceptions
+                    @handle_exceptions(col_op.__name__)
                     def inner_func(*args, **kwargs):
                         #print(f"inner func({args}, {kwargs})")
                         result = invoker(*args, **kwargs)
@@ -739,9 +724,12 @@ class MongoClient:
                             #(f"type result: {type(result)}")
                             #print(f"result: {result}")
                             return result
+                        inner_func.__name__ = col_op.__name__
+                    #print(f"inner_func.__name__ : {inner_func.__name__}")
                     return inner_func
                 else:
                     return invoker
+            #print(f"make_invoker.__name__ : {make_invoker.__name__}")
             return make_invoker(col_op)
 
 
