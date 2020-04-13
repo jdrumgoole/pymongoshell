@@ -705,7 +705,9 @@ class MongoClient:
         '''
         col_op = MongoClient.has_attr(self.collection, name)
         if col_op is None:
-            return self.collection.__getattr__(name)
+            self._collection=self.collection.__getattr__(name)
+            self._collection_name = name
+            print(f"Setting default database and collection to: {self.collection_name}")
         else:
             def make_invoker(invoker):
                 if callable(invoker):

@@ -38,3 +38,6 @@ c.update_one({"name" : "Joe Drumgoole"}, {"$set" : {"age" : 35}})
 c.update_many({"social" : "twitter"}, {"$set" : {"followers" : 1000}})
 c=mongodbshell.MongoClient(host="mongodb+srv://readonly:readonly@covid-19.hip2i.mongodb.net/test?retryWrites=true&w=majority")
 c.find(1) # force an error
+c.bongo #make a collection
+c.bongospongo() # call an invalid method
+
