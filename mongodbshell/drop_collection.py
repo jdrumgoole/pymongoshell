@@ -4,7 +4,6 @@ import sys
 import argparse
 
 import pymongo
-from pymongo.errors import ConnectionFailure
 
 
 if __name__ == "__main__":
@@ -15,10 +14,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", default='mongodb://localhost:27017',
                         help="mongodb URI [default: %(default)s]")
-    parser.add_argument("--database", default='demo',
+    parser.add_argument("--database", default=None,
                         help="database name: %(default)s]")
-    parser.add_argument("--collection", default='zipcodes',
+    parser.add_argument("--collection", default=None,
                         help="collection name: %(default)s]")
+
 
     args = parser.parse_args()
 

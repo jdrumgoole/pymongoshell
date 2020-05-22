@@ -16,22 +16,16 @@ import sys
 from mongodbshell.pager import Pager, FileNotOpenError
 from mongodbshell.version import VERSION
 
-from mongodbshell.errorhandling import handle_exceptions, compliant_decorator
+from mongodbshell.errorhandling import handle_exceptions, MongoDBShellError
 
-class ShellError(ValueError):
-    pass
+
+
 
 
 if sys.platform == "Windows":
     db_name_excluded_chars = r'/\. "$*<>:|?'
 else:
     db_name_excluded_chars = r'/\. "$'
-
-
-class MongoDBShellError(ValueError):
-    pass
-
-
 
 
 class HandleResults:
@@ -88,8 +82,6 @@ class MongoClient:
 
     def __init__(self,
                  banner=True,
-                 database_name="test",
-                 collection_name="test",
                  host="mongodb://localhost:27017",
                  serverSelectionTimeoutMS:int=5000,
                  *args,
@@ -111,8 +103,6 @@ class MongoClient:
         Server selection timeout set to 5.0 seconds
         >>> c
         mongodbshell.MongoClient(banner=True,
-                                 database_name='test',
-                                 collection_name='test',
                                  host= 'mongodb://localhost:27017')
 
         Access the internal MongoClient object:
@@ -170,14 +160,20 @@ class MongoClient:
         else:
             object.__setattr__(self, "_fqdn", None)
 
-        if self._database_name is None:
-            self._database_name = database_name
-        if self._collection_name is None:
-            self._collection_name = collection_name
+        # # if we don't parse a database out of the URL lets see if we got one
+        # # from the __init__ parameters.
+        # if self._database_name is None:
+        #     self._database_name = database_name
+        # if self._collection_name is None:
+        #     self._collection_name = collection_name
 
-        object.__setattr__(self, "_database", self._client[self._database_name])
         object.__setattr__(self, "_collection", None)
-        self._set_collection(collection_name)
+        object.__setattr__(self, "_database", None)
+
+        if self._database_name:
+            object.__setattr__(self, "_database", self._client[self._database_name])
+        if self._collection_name:
+            self._set_collection(self._collection_name)
         #
         # self._collection = self._database[self._collection_name]
         object.__setattr__(self, "_output_filename", None)
@@ -195,7 +191,8 @@ class MongoClient:
 
         if self._banner:
             self.shell_version()
-            print(f"Using collection '{self.collection_name}'")
+            if not self._collection_name:
+                print(f"Please set a default collection by assigning one to .collection")
             print(f"Server requests set to timeout after {serverSelectionTimeoutMS/1000} seconds")
 
     @staticmethod
@@ -248,7 +245,7 @@ class MongoClient:
         if database_name and MongoClient.valid_mongodb_name(database_name):
             self._database = self.client[database_name]
         else:
-            raise ShellError(f"'{database_name}' is not a valid database name")
+            raise MongoDBShellError(f"'{database_name}' is not a valid database name")
 
     @property
     def database_name(self):
@@ -257,7 +254,7 @@ class MongoClient:
         """
         return self._database_name
 
-    @handle_exceptions("set_collection")
+    #@handle_exceptions("_set_collection")
     def _set_collection(self, name:str):
         '''
         Set a collection name. The name parameter can be a bare
@@ -277,15 +274,15 @@ class MongoClient:
                     self._collection_name = collection_name
 
                 else:
-                    raise ShellError(f"'{collection_name}' is not a valid collection name")
+                    raise MongoDBShellError(f"'{collection_name}' is not a valid collection name")
             else:
-                raise ShellError(f"'{database_name}' is not a valid database name")
+                raise MongoDBShellError(f"'{database_name}' is not a valid database name")
         else:
             if self.valid_mongodb_name(name):
                 self._collection = self._database[name]
                 self._collection_name = name
             else:
-                raise ShellError(f"'{name}' is not a valid collection name")
+                raise MongoDBShellError(f"'{name}' is not a valid collection name")
 
         return self._collection
 
@@ -296,7 +293,10 @@ class MongoClient:
         Assign to `collection` to reset the current default collection.
         Return the default collection object associated with the `MongoDB` object.
         """
-        return self._collection
+        if self._collection:
+            return self._collection
+        else:
+            return None
 
     @property
     def collection_name(self):
@@ -311,7 +311,7 @@ class MongoClient:
             return f"{self._database_name}.{self._collection_name}"
 
     @collection.setter
-    @handle_exceptions("collection")
+    @handle_exceptions("collection.setter")
     def collection(self, db_collection_name):
         """
         Set the default collection for the database associated with the `MongoDB`
@@ -321,11 +321,12 @@ class MongoClient:
         """
 
         col = self._set_collection(db_collection_name)
-        # print(f"Now using collection '{self.collection_name}'")
+        print(f"Now using collection '{self.collection_name}'")
         if self._database.list_collection_names() is None:
             print("Info: You have specified an empty collection '{db_collection_name}'")
         return col
 
+    @handle_exceptions("is_master")
     def is_master(self):
         """
         Run the pymongo is_master command for the current server.
@@ -524,7 +525,7 @@ class MongoClient:
         :param message: A string
         :return: bool.
         """
-        response = input(f"{message}[ y/Y]:")
+        response = input(f"{message} [y/Y]: ")
         response.upper()
         return response == "Y"
 
@@ -534,21 +535,27 @@ class MongoClient:
     #     except OperationFailure as e:
     #         print(f"Error: {e}")
 
-    def create_index(self, name):
-        name = self._collection.create_index(name)
-        print(f"Created index: '{name}'")
+    # def create_index(self, name):
+    #     name = self._collection.create_index(name)
+    #     print(f"Created index: '{name}'")
 
+    @handle_exceptions("drop_collections")
     def drop_collection(self, confirm=True):
-        if confirm and self.confirm_yes(f'Drop collection:{self._database_name}.{self._collection_name}'):
+        if confirm and self.confirm_yes(f"Drop collection: '{self._database_name}.{self._collection_name}'"):
             return self._collection.drop()
         else:
             return self._collection.drop()
 
     def drop_database(self, confirm=True):
-        if confirm and self.confirm_yes(f'Drop database:{self._database_name}'):
-            return self._client.drop_database(self.database)
+        if confirm and self.confirm_yes(f"Drop database: '{self._database_name}'"):
+            result = self._client.drop_database(self.database)
         else:
-            return self._client.drop_database(self.database)
+            result = self._client.drop_database(self.database)
+        print(f"dropped database: '{self._database_name}'")
+        self._collection = None
+        self._collection_name = None
+        self._database = None
+        self._database_name = None
 
     @property
     def overlap(self):
@@ -687,6 +694,11 @@ class MongoClient:
         else:
             return None
 
+    @staticmethod
+    def error(*args, **kwargs):
+        print("You have to set a value for the default collection")
+
+    @handle_exceptions("__get_attr__")
     def __getattr__(self, name, *args, **kwargs):
         '''
         Call __getattr__ if we specify members that don't exist. The
@@ -703,7 +715,9 @@ class MongoClient:
         :param kwargs: kwargs passed in by invoker
         :return: Results of call target method
         '''
-        col_op = MongoClient.has_attr(self.collection, name)
+
+
+        col_op = MongoClient.has_attr(self._collection, name)
         if col_op is None:
             self._collection=self.collection.__getattr__(name)
             self._collection_name = name

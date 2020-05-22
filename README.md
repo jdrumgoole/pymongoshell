@@ -84,7 +84,121 @@ Collection(Database(MongoClient(host=['localhost:27017'], document_class=dict, t
 >>>
 ```
 
-There are also convenience functions for some more common operations:
+## Pick a collection
+To use a particular collection just assign the name to the collection object. You
+can use dotted notation to pick a new database and collection at the same time.
+Just specify the new database and collection name by assigning them to 
+the collection object.
+
+
+```python
+>>> import mongodbshell
+>>> c=mongodbshell.MongoClient()
+mongodbshell 1.1.0b6
+Using collection 'test.test'
+Server requests set to timeout after 5.0 seconds
+>>> c.collection_name
+'test.test'
+>>> c.collection_name="hello"
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "C:\Users\joe\GIT\mongodbshell\mongodbshell\mongoclient.py", line 747, in __setattr__
+    object.__setattr__(self, name, value)
+AttributeError: can't set attribute
+>>> c.collection="test2"
+>>> c.collection_name
+'test.test2'
+>>> c.collection="dummy.test3"
+>>> c.collection_name
+'dummy.test3'
+>>> c.collection
+Collection(Database(MongoClient(host=['localhost:27017'], document_class=dict, tz_aware=False, connect=True, serverselectiontimeoutms=5000), 'dummy'), 'test3')
+>>>
+```
+
+
+# Changing Format of Output
+
+The `mongodbshell` supports three formatting directives. All are boolean values
+and all are true by default.
+```python
+>>> c.paginate
+True
+>>> c.pretty_print
+True
+>>> c.line_numbers
+True
+>>>
+```
+
+## Paginate
+Pagination ensures that the results of the output don't scroll off the screen. 
+The pagination uses the screen dimensions to properly format and wrap the output
+so that regardless of screen size changes the output can always be viewed. The 
+viewport is recalcuated dynamically so the user can change the terminal window
+size while paging throughout. Pagination can be turned off by setting `paginate`
+to false.
+```python
+>>> c.paginate=False
+>>> c.paginate
+False
+```
+
+## pretty_print
+Pretty printing is used to ensure that the JSON documents output are properly
+formatted and easy to read. For small documents turning pretty printing off will
+result in the documents printing on a single line which can sometimes be easier
+to read.
+
+To turn off `pretty_print` just set the value to `False`.
+```python
+>>> c.pretty_print=False
+>>>
+```
+## line_numbers
+Line numbers are added by default to allow a user to keep track of location
+in a large stream output. Similarily to the other properties `line_numbers`
+can be toggled on and off by settting the flag.
+```python
+>>> c.line_numbers=False
+>>>
+```
+#Convenience Functions
+
+The class provides a number of convenience functions to allow easy access
+to some of the more common administrative functions.
+
+## lcols
+
+## ldbs
+
+## drop_database
+
+To drop a database from a server you can run the `drop_database` command.
+
+```python
+>>> c.collection="dummy.data"
+>>> c.insert_one({"name":"Joe Drumgoole"})
+Inserted: 5e9790385b17a0269489bfcc
+>>> c.ldbs
+1  : admin
+2  : config
+3  : dummy
+4  : geo_example
+5  : local
+>>> c.drop_database()
+Drop database: 'dummy' [y/Y]: y
+>>> c.ldbs
+1  : admin
+2  : config
+3  : geo_example
+4  : local
+>>>
+```
+
+## drop_collection
+
+
 
 ## is_master
 
@@ -180,53 +294,6 @@ Server selection timeout set to 5.0 seconds
 This tells us there are 29350 zip codes in the USA and 49 in New York. This is an
 old data set so those numbers may not be quite up to date with the latest
 US zipcodes. 
-
-# Changing Format of Output
-
-The `mongodbshell` supports three formatting directives. All are boolean values
-and all are true by default.
-```python
->>> c.paginate
-True
->>> c.pretty_print
-True
->>> c.line_numbers
-True
->>>
-```
-
-## Paginate
-Pagination ensures that the results of the output don't scroll off the screen. 
-The pagination uses the screen dimensions to properly format and wrap the output
-so that regardless of screen size changes the output can always be viewed. The 
-viewport is recalcuated dynamically so the user can change the terminal window
-size while paging throughout. Pagination can be turned off by setting `paginate`
-to false.
-```python
->>> c.paginate=False
->>> c.paginate
-False
-```
-
-## pretty_print
-Pretty printing is used to ensure that the JSON documents output are properly
-formatted and easy to read. For small documents turning pretty printing off will
-result in the documents printing on a single line which can sometimes be easier
-to read.
-
-To turn off `pretty_print` just set the value to `False`.
-```python
->>> c.pretty_print=False
->>>
-```
-## line_numbers
-Line numbers are added by default to allow a user to keep track of location
-in a large stream output. Similarily to the other properties `line_numbers`
-can be toggled on and off by settting the flag.
-```python
->>> c.line_numbers=False
->>>
-```
 
 # Find Examples
 

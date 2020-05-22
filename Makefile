@@ -53,10 +53,12 @@ test: start_server get_zipcode_data
 	nosetests
 
 prod_build:clean  sdist
-	twine upload --verbose --repository-url https://upload.pypi.org/legacy/ dist/* -u jdrumgoole
+	python setup.py upload
+	#twine upload --verbose --repository-url https://upload.pypi.org/legacy/ dist/* -u jdrumgoole
 
 test_build: clean sdist
-	twine upload --verbose --repository-url https://test.pypi.org/legacy/ dist/* -u jdrumgoole
+	python setup.py testupload
+	#twine upload --verbose --repository-url https://test.pypi.org/legacy/ dist/* -u jdrumgoole
 
 sdist:
 	${PYTHON} setup.py sdist

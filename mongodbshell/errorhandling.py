@@ -1,8 +1,21 @@
 import sys
 import pprint
 
+
 from pymongo.errors import OperationFailure, ServerSelectionTimeoutError, \
     AutoReconnect, BulkWriteError, DuplicateKeyError
+
+
+class CollectionNotSetError(ValueError):
+    pass
+
+
+class ShellError(ValueError):
+    pass
+
+
+class MongoDBShellError(ValueError):
+    pass
 
 def compliant_decorator(decorator):
     """
@@ -68,16 +81,19 @@ def handle_exceptions(arg):
             #source = ""
             try:
                 return func(*args, **kwargs)
+            except AttributeError as e:
+                print_to_err(f"AttributeError: You must set a database and collection for {arg} operations to work")
             except TypeError as e:
                 print_to_err(f"TypeError:{source} {e}")
             except ServerSelectionTimeoutError as e:
-                print_to_err(f"ServerSelectionTimeoutError:{source} {e}")
+                print_to_err(f"ServerSelectionTimeoutError: {label} {e}")
+                print_to_err(f"Do you have a mongod server running?")
             except AutoReconnect as e:
                 print_to_err(f"AutoReconnect error:{source} {e}")
             except BulkWriteError as e:
                 print_to_err(f"BulkWriteError:{source} {e}")
                 err_str = pprint.pformat(e)
-                pprint.pprint(e.details, stream=sys.stderr)
+                print_to_err(err_str)
             except DuplicateKeyError as e:
                 print_to_err(f"DuplicateKeyError:{source}")
                 err_str = pprint.pformat(e.details)
@@ -86,6 +102,8 @@ def handle_exceptions(arg):
                 print_to_err(f"OperationsFailure:{source} {e}")
                 print_to_err(e.code)
                 print_to_err(e.details)
+            except MongoDBShellError as e:
+                print_to_err(f"MongoDBShellError: {e}")
             except Exception as e:
                 print_to_err(f"Exception:{source} {e}")
         return function_wrapper

@@ -5,6 +5,7 @@ col=db["coltest"]
 
 import mongodbshell
 c=mongodbshell.MongoClient()
+c.collection="test.test"
 c.is_master()
 d1 = {"name" : "Heracles"}
 d2 = {"name" : "Orpheus"}
@@ -41,3 +42,11 @@ c.find(1) # force an error
 c.bongo #make a collection
 c.bongospongo() # call an invalid method
 
+#
+c=mongodbshell.MongoClient()
+c.ldbs
+c.collection="dummy.data"
+c.insert_one({"name":"Joe Drumgoole"})
+c.ldbs
+c.drop_database()
+c.ldbs
