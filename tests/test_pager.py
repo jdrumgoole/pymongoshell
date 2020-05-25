@@ -5,8 +5,8 @@ import random
 import os
 from io import StringIO
 import sys
-from mongodbshell.pager import Pager
-from mongodbshell.pager import LineNumbers
+from pymongoshell.pager import Pager
+from pymongoshell.pager import LineNumbers
 
 
 @contextmanager

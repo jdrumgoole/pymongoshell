@@ -2,6 +2,9 @@ import shutil
 import pprint
 from datetime import datetime
 
+import pymongo
+
+
 class QuitPaginateException(Exception):
     pass
 
@@ -9,8 +12,10 @@ class QuitPaginateException(Exception):
 class PaginationError(Exception):
     pass
 
+
 class FileNotOpenError(Exception):
     pass
+
 
 class LineNumbers:
     """
@@ -119,7 +124,7 @@ class Pager:
         return self._paginate
 
     @paginate.setter
-    def paginate(self,state):
+    def paginate(self, state):
         self._paginate = state
 
     @property
@@ -127,7 +132,7 @@ class Pager:
         return self._pretty_print
 
     @pretty_print.setter
-    def pretty_print(self,state):
+    def pretty_print(self, state):
         self._pretty_print = state
 
     def close(self):
@@ -243,8 +248,8 @@ class Pager:
                         terminal_columns = default_terminal_cols
                     if default_terminal_lines:
                         terminal_lines = default_terminal_lines
-                    terminal_columns = terminal_columns - 1 # subtract one because we force a newline if we fill the
-                                                            # column which messes up the formatting
+                    terminal_columns = terminal_columns - 1  # subtract one because we force a newline if we fill the
+                    # column which messes up the formatting
 
                     if terminal_lines < 2:
                         raise PaginationError("Only 1 display line for output, I need at least two")
@@ -336,7 +341,6 @@ class Pager:
                 elem = elem + close_bracket
             yield elem
 
-
     def paginate_doc(self, doc):
         return self.paginate_lines(self.dict_to_lines(doc))
 
@@ -346,3 +350,18 @@ class Pager:
         # else:
         #     print("__del__ output_file is None")
         self.close()
+
+    def cursor_to_lines(self, cursor: pymongo.cursor, format_func=None):
+        """
+        Take a cursor that returns a list of docs and returns a
+        generator yield each line of each doc a line at a time.
+
+        :param cursor: A mongodb cursor yielding docs (dictionaries)
+        :param format_func: A customisable format function, expects and returns a doc
+        :return: a generator yielding a line at a time
+        """
+        for doc in cursor:
+            yield from self.dict_to_lines(doc, format_func)
+
+    def print_cursor(self,  cursor, format_func=None):
+        return self.paginate_lines(self.cursor_to_lines(cursor, format_func))

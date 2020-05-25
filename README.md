@@ -1,12 +1,12 @@
-# mongodbshell :  MongoDB in the python shell
+# pymongoshell :  MongoDB in the python shell
 
 The Python shell is the ideal environment for Python developers to interact
 with MongoDB. However output cursors and interacting with the database requires
-a little more boilerplate than is convenient. the `mongodbshell` package 
+a little more boilerplate than is convenient. the `pymongoshell` package 
 provides a set a convenience functions and objects to allow easier
 interaction with MongoDB via the Python interpreter. 
 
-The key value adds for the `mongodbshell` over the standard `pymongo`
+The key value adds for the `pymongoshell` over the standard `pymongo`
 package are:
 
  * Proper pagination of output
@@ -33,10 +33,10 @@ you can install the software with `pip3`. The `mongodbshell` only
 supports Python 3. 
 
 ```shell script
-$ pip3 install mongodbshell
+$ pip3 install pymongoshell
 ```
 
-## Using the mongodbshell
+## Using the pymongoshell
 
 First we create a `MongoClient` object. This is a proxy for all the 
 commands we can run using `MongoDBShell`. It is exactly analogous to 
@@ -45,13 +45,13 @@ additional argument `banner`. This argument controls whether we output a banner
 detailing which version and which collections 
 
 ```python
->>> import mongodbshell
->>> c = mongodbshell.MongoClient()
-mongodbshell 1.1.0b5
+>>> import pymongoshell
+>>> c = pymongoshell.MongoClient()
+pymongoshell 1.1.0b5
 Using collection 'test.test'
 Server selection timeout set to 5.0 seconds
 >>> c
-mongodbshell.MongoClient(banner=True,
+pymongoshell.MongoClient(banner=True,
                          database_name='test',
                          collection_name='test',
                          host= 'mongodb://localhost:27017')
@@ -66,7 +66,7 @@ MongoClient(host=['localhost:27017'], document_class=dict, tz_aware=False, conne
 >>>
 ```
 
-Each `mongodbshell.MongoClient` object has a set of standard properties that 
+Each `pymongoshell.MongoClient` object has a set of standard properties that 
 represent the `pymongo` objects. In normal use you will not reference these
 objects:
 
@@ -92,9 +92,9 @@ the collection object.
 
 
 ```python
->>> import mongodbshell
->>> c=mongodbshell.MongoClient()
-mongodbshell 1.1.0b6
+>>> import pymongoshell
+>>> c=pymongoshell.MongoClient()
+pymongoshell 1.1.0b6
 Using collection 'test.test'
 Server requests set to timeout after 5.0 seconds
 >>> c.collection_name
@@ -102,7 +102,7 @@ Server requests set to timeout after 5.0 seconds
 >>> c.collection_name="hello"
 Traceback (most recent call last):
   File "<stdin>", line 1, in <module>
-  File "C:\Users\joe\GIT\mongodbshell\mongodbshell\mongoclient.py", line 747, in __setattr__
+  File "C:\Users\joe\GIT\pymongoshell\pymongoshell\mongoclient.py", line 747, in __setattr__
     object.__setattr__(self, name, value)
 AttributeError: can't set attribute
 >>> c.collection="test2"
@@ -119,7 +119,7 @@ Collection(Database(MongoClient(host=['localhost:27017'], document_class=dict, t
 
 # Changing Format of Output
 
-The `mongodbshell` supports three formatting directives. All are boolean values
+The `pymongoshell` supports three formatting directives. All are boolean values
 and all are true by default.
 ```python
 >>> c.paginate
@@ -280,8 +280,8 @@ operation. You can apply a filter to limit the number of documents returned.
 In this example lets connect to a [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) 
 database hosted in the cloud. 
 ```python
-c=mongodbshell.MongoClient("mongodb+srv://readonly:readonly@demodata-rgl39.mongodb.net/test?retryWrites=true")
-mongodbshell 1.1.0b5
+c=pymongoshell.MongoClient("mongodb+srv://readonly:readonly@demodata-rgl39.mongodb.net/test?retryWrites=true")
+pymongoshell 1.1.0b5
 Using collection 'test.test'
 Server selection timeout set to 5.0 seconds
 >>> c.collection="demo.zipcodes"
@@ -300,9 +300,9 @@ US zipcodes.
 Let's create an example dataset.
 
 ```python
->>> import mongodbshell
->>> c=mongodbshell.MongoClient()
-mongodbshell 1.1.0b5
+>>> import pymongoshell
+>>> c=pymongoshell.MongoClient()
+pymongoshell 1.1.0b5
 Using collection 'test.test'
 Server requests set to timeout after 5.0 seconds
 >>>
@@ -388,7 +388,7 @@ field is an array.
 ##Connecting to a specific MongoDB URI
 
 You can connect to a different database by passing in a different URI to the `host` 
-parameter for `mongodbshell.MongoClient`. Here is an
+parameter for `pymongoshell.MongoClient`. Here is an
 example connection to a [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) 
 hosted database. 
 
@@ -399,11 +399,11 @@ MongoDB URI:
 "mongodb+srv://readonly:readonly@demodata-rgl39.mongodb.net/test?retryWrites=true"
 ```
 
-In the `mongodbshell`:
+In the `pymongoshell`:
 
 ```python
->>> import mongodbshell
->>> atlas=mongodbshell.MongoClient(host="mongodb+srv://readonly:readonly@demodata-rgl39.mongodb.net/test?retryWrites=true", database="demo", collection="zipcodes")
+>>> import pymongoshell
+>>> atlas=pymongoshell.MongoClient(host="mongodb+srv://readonly:readonly@demodata-rgl39.mongodb.net/test?retryWrites=true", database="demo", collection="zipcodes")
 >>> atlas.find_one()
 1    {'_id': '01069',
 2     'city': 'PALMER',

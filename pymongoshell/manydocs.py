@@ -3,8 +3,8 @@ oc=pymongo.MongoClient()
 db=oc["dbtest"]
 col=db["coltest"]
 
-import mongodbshell
-c=mongodbshell.MongoClient()
+import pymongoshell
+c=pymongoshell.MongoClient()
 c.collection="test.test"
 c.is_master()
 d1 = {"name" : "Heracles"}
@@ -37,15 +37,15 @@ c.drop_index("social_1")
 c.update_one({"name" : "Joe Drumgoole"}, {"$set" : {"age" : 35}})
 c.update_one({"name" : "Joe Drumgoole"}, {"$set" : {"age" : 35}})
 c.update_many({"social" : "twitter"}, {"$set" : {"followers" : 1000}})
-c=mongodbshell.MongoClient(host="mongodb+srv://readonly:readonly@covid-19.hip2i.mongodb.net/test?retryWrites=true&w=majority")
+c=pymongoshell.MongoClient(host="mongodb+srv://readonly:readonly@covid-19.hip2i.mongodb.net/test?retryWrites=true&w=majority")
 c.find(1) # force an error
 c.bongo #make a collection
 c.bongospongo() # call an invalid method
 
 #
-c=mongodbshell.MongoClient()
+c=pymongoshell.MongoClient()
 c.ldbs
-c.collection="dummy.data"
+c.collection = "dummy.data"
 c.insert_one({"name":"Joe Drumgoole"})
 c.ldbs
 c.drop_database()

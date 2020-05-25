@@ -5,7 +5,7 @@ from io import StringIO
 from datetime import datetime
 import pymongo
 
-from mongodbshell.mongoclient import MongoClient
+from pymongoshell.mongoclient import MongoClient
 
 @contextmanager
 def captured_output():

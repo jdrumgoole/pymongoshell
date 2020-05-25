@@ -10,8 +10,8 @@ Install using `pip3` (`MongoDBShell` only supports Python 3).
 
 To use::
 
-    >>> import mongodbshell
-    >>> client = mongodbshell.MongoClient() # assumes a local mongod running on port 27017
+    >>> import pymongoshell
+    >>> client = pymongoshell.MongoClient() # assumes a local mongod running on port 27017
     >>> client
     mongodbshell.MongoDB('test', 'test', 'mongodb://localhost:27017')
     >>> client.insert_one({"msg" : "MongoDBShell is great"})
@@ -38,4 +38,4 @@ Follow me on twitter `@jdrumgoole <https://twitter.com/jdrumgoole>`_. for
 updates on this package.
 """
 
-from mongodbshell.mongoclient import MongoClient
+from pymongoshell.mongoclient import MongoClient

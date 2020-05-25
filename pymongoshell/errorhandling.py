@@ -54,7 +54,7 @@ def args_to_string(*args, **kwargs):
     args_list = ""
     for i, arg in enumerate(args):
         if callable(arg):
-            args_list = f"{args_list}{arg.__name__}()"
+            args_list = f"{args_list}{arg}" #{arg.__name__} ()"
         else:
             args_list = f"{args_list}{arg}"
         if len(args) > 1 and (i+1) < len(args):
@@ -71,6 +71,20 @@ def args_to_string(*args, **kwargs):
     else:
         return ""
 
+
+def error_func(error):
+    def director(func):
+        def inner_error(*args, **kwargs):
+            print(f"Error func: {func.__name__} {error}")
+            if args:
+                print(f"{args}")
+            if kwargs:
+                print(f"{kwargs}")
+        return inner_error
+
+    return director
+
+
 def handle_exceptions(arg):
     def director(func):
         def function_wrapper(*args, **kwargs):
@@ -78,35 +92,43 @@ def handle_exceptions(arg):
             arg_string = args_to_string(*args, **kwargs)
 
             source = f"{label}({arg_string})"
+            function_wrapper.__name__ = func.__name__
             #source = ""
             try:
+                print(f"arg_string:{arg_string}")
                 return func(*args, **kwargs)
             except AttributeError as e:
-                print_to_err(f"AttributeError: You must set a database and collection for {arg} operations to work")
+                print_to_err(f"CLI AttributeError: {func.__name__} is not a valid operation")
+               # return error_func(f"AttributeError (he): {func.__name__} is not a valid operation")
             except TypeError as e:
-                print_to_err(f"TypeError:{source} {e}")
+                print_to_err(f"CLI TypeError: '{source}' {e}")
             except ServerSelectionTimeoutError as e:
-                print_to_err(f"ServerSelectionTimeoutError: {label} {e}")
-                print_to_err(f"Do you have a mongod server running?")
+                print_to_err(f"CLI ServerSelectionTimeoutError: {label} {e}")
+                print_to_err(f"CLI Do you have a mongod server running?")
             except AutoReconnect as e:
-                print_to_err(f"AutoReconnect error:{source} {e}")
+                print_to_err(f"CLI AutoReconnect error: {source} {e}")
             except BulkWriteError as e:
-                print_to_err(f"BulkWriteError:{source} {e}")
+                print_to_err(f"CLI BulkWriteError: {source} {e}")
                 err_str = pprint.pformat(e)
                 print_to_err(err_str)
             except DuplicateKeyError as e:
-                print_to_err(f"DuplicateKeyError:{source}")
+                print_to_err(f"CLI DuplicateKeyError: {source}")
                 err_str = pprint.pformat(e.details)
                 print_to_err(err_str)
             except OperationFailure as e:
-                print_to_err(f"OperationsFailure:{source} {e}")
+                print_to_err(f"CLI OperationsFailure:{source}")
                 print_to_err(e.code)
                 print_to_err(e.details)
             except MongoDBShellError as e:
-                print_to_err(f"MongoDBShellError: {e}")
+                print_to_err(f"CLI MongoDBShellError: {e}")
+            except CollectionNotSetError as e:
+                print_to_err(f"CLI CollectionNotSetError: you must set a default collection")
             except Exception as e:
-                print_to_err(f"Exception:{source} {e}")
+                print_to_err(f"CLI Exception: {source} {e}")
+
+        function_wrapper.__name__ = func.__name__
         return function_wrapper
+
     return director
 
 @handle_exceptions("test")

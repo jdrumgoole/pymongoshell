@@ -148,7 +148,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'mongodbshell', 'MongoDBShell Documentation',
+    (master_doc, 'pymongoshell', 'MongoDBShell Documentation',
      [author], 1)
 ]
 

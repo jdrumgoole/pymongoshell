@@ -1,5 +1,5 @@
 #
-# Makefile for mongodbshell
+# Makefile for pymongoshell
 #
 # joe@joedrumgoole.com
 #

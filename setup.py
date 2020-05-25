@@ -12,9 +12,9 @@ from shutil import rmtree
 from setuptools import find_packages, setup, Command
 
 # Package meta-data.
-NAME = "mongodbshell"
-DESCRIPTION = 'mongodbshell is a class that makes it easy to use MongoDB in the python shell'
-URL = 'https://github.com/jdrumgoole/mongodbshell'
+NAME = "pymongoshell"
+DESCRIPTION = 'pymongoshell is a class that makes it easy to use MongoDB in the python shell'
+URL = 'https://github.com/jdrumgoole/pymongoshell'
 EMAIL = 'joe@joedrumgoole.com'
 AUTHOR = 'Joe Drumgoole'
 REQUIRES_PYTHON = '>=3.6.0'
