@@ -350,106 +350,6 @@ class MongoClient:
         filter_arg = filter or {}
         return self.collection.count_documents(filter=filter_arg, *args, *kwargs)
 
-    # @handle_exceptions
-    # def find(self, *args, **kwargs):
-    #     """
-    #     Run the pymongo find command against the default database and collection
-    #     and paginate the output to the screen.
-    #     """
-    #     # print(f"database.collection: '{self.database.name}.{self.collection.name}'")
-    #
-    #     self._pager.print_cursor(self.collection.find(*args, **kwargs))
-
-    # @handle_exceptions
-    # def find_explain(self, *args, **kwargs):
-    #
-    #     explain_doc = self.collection.find(*args, **kwargs).explain()
-    #     self._pager.paginate_doc(explain_doc)
-    #
-    # @handle_exceptions
-    # def find_one(self, *args, **kwargs):
-    #     """
-    #     Run the pymongo find_one command against the default database and collection
-    #     and paginate the output to the screen.
-    #     """
-    #     # print(f"database.collection: '{self.database.name}.{self.collection.name}'")
-    #     self._pager.paginate_doc(self.collection.find_one(*args, **kwargs))
-
-    # @handle_exceptions
-    # def insert_one(self, *args, **kwargs):
-    #     """
-    #     Run the pymongo insert_one command against the default database and collection
-    #     and returne the inserted ID.
-    #     """
-    #     # print(f"database.collection: '{self.database.name}.{self.collection.name}'")
-    #     result = self.collection.insert_one(*args, **kwargs)
-    #     print(f"Inserted Id: {result.inserted_id} acknowledged: {result.acknowledged}")
-    #
-    # @handle_exceptions
-    # def insert_many(self, *args, **kwargs):
-    #     """
-    #     Run the pymongo insert_many command against the default database and collection
-    #     and return the list of inserted IDs.
-    #     """
-    #     # print(f"database.collection: '{self.database.name}.{self.collection.name}'")
-    #     result = self.collection.insert_many(*args, **kwargs)
-    #     self._pager.paginate_lines(pprint.pformat(result.inserted_ids).splitlines())
-    #
-    # def update_one(self, *args, **kwargs):
-    #     """
-    #     Run the pymongo update_one against the default database and collection
-    #     and return the upserted ID.
-    #
-    #     :param args:
-    #     :param kwargs:
-    #     :return: updateResult
-    #     """
-    #     result = self.collection.update_one(*args, **kwargs)
-    #     return result
-    #
-    # def update_many(self, *args, **kwargs):
-    #     """
-    #     Run the pymongo update_many against the default database and collection
-    #     and return the list of upserted IDs.
-    #
-    #     :param args:
-    #     :param kwargs:
-    #     :return: upsertedResult.
-    #     """
-    #
-    #     result = self.collection.update_many(*args, **kwargs)
-    #
-    #     return result
-    #
-    # def delete_one(self, *args, **kwargs):
-    #     """
-    #     Run the pymongo delete_one command against the default database and collection
-    #     and return the deleted IDs.
-    #     """
-    #     result = self.collection.delete_one(*args, **kwargs)
-    #     return result
-    # def delete_many(self, *args, **kwargs):
-    #     """
-    #     Run the pymongo delete_many command against the default database and collection
-    #     and return the deleted IDs.
-    #     """
-    #     result = self.collection.delete_many(*args, **kwargs)
-    #     return result
-    #
-    # def count_documents(self, filter:dict=None, *args, **kwargs):
-    #     """
-    #     Count all the documents in a collection accurately
-    #     """
-    #     if filter is None:
-    #         filter = {}
-    #     result = self.collection.count_documents(filter, *args, **kwargs)
-    #     return result
-    #
-    # def aggregate(self,pipeline, session=None, **kwargs):
-    #     """
-    #     Run the aggregation pipeline
-    #     """
-    #     self.print_cursor(self.collection.aggregate(pipeline, session, **kwargs))
 
     def rename(self, new_name, **kwargs):
         if not self.valid_mongodb_name(new_name):
@@ -684,24 +584,26 @@ class MongoClient:
             return None
 
     def process_result(self, result):
-        if type(result) in [pymongo.command_cursor.CommandCursor, pymongo.cursor.Cursor]:
+        if result is None:
+            print("None")
+        elif type(result) in [pymongo.command_cursor.CommandCursor, pymongo.cursor.Cursor]:
             self._pager.print_cursor(result)
         elif self._handle_result.is_type(result):
             self._handle_result.handle(result)
         elif type(result) is dict:
             self._pager.paginate_doc(result)
         else:
-            return result
+            print(result)
 
     def interceptor(self, func):
         #@handle_exceptions(col_op.__name__)
         def inner_func(*args, **kwargs):
             inner_func.__name__ = func.__name__
-            print(f"{func.__name__}({args}, {kwargs})")
+            #print(f"{func.__name__}({args}, {kwargs})")
             result = func(*args, **kwargs)
             self.process_result(result)
         inner_func.__name__ = func.__name__
-        print(f"inner_func.__name__ : {inner_func.__name__}")
+        #print(f"inner_func.__name__ : {inner_func.__name__}")
         return inner_func
 
     def __getattr__(self, item):
@@ -709,8 +611,8 @@ class MongoClient:
             return self._set_collection(item)
         else:
             db_name, col_name = self.parse_full_name(item)
-            print(f"item:{item}")
-            print(f"col_name:{col_name}")
+            #print(f"item:{item}")
+            #print(f"col_name:{col_name}")
             func = self.has_attr(self._collection, col_name)
             if callable(func):
                 return self.interceptor(func)

@@ -46,19 +46,6 @@ class TestShell(unittest.TestCase):
             self._c.is_master()
         self.assertTrue("'ismaster': True," in out.getvalue(), out.getvalue())
 
-    def test_watch(self):
-        cl = pymongo.MongoClient(host="mongodb://localhost:27018", replicaSet="CHANGESTREAM")
-        db = cl["dummy"]
-        c = db["test"]
-
-        print(str(datetime.utcnow()))
-        with c.watch(max_await_time_ms=10000) as stream:
-            print(str(datetime.utcnow()))
-            x = stream.try_next()
-            if x:
-                print(x)
-        print(str(datetime.utcnow()))
-        print("done")
 
     def test_find_one(self):
         with captured_output() as (out, err):

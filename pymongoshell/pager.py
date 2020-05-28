@@ -33,10 +33,10 @@ class LineNumbers:
         self._line_number = start
 
     @property
-    def line_numbers(self):
-        return self._line_numbers
+    def line_number(self):
+        return self._line_number
 
-    @line_numbers.setter
+    @line_number.setter
     def line_number(self, line_number: int):
         """
         :type line_number: int
@@ -44,30 +44,31 @@ class LineNumbers:
         self._line_number = line_number
 
     @staticmethod
-    def prefix(number):
+    def prefix():
         """
 
         :param number: If None return an empty prefix
         :return: a prefix string
         """
-        if number:
-            return f'{number:<3}: '
-        else:
+        if self._line_number == 0:
             return ""
+        else:
+            return f'{self._line_number:<3}: '
 
-    def line_number(self, s):
+
+    def add_line_number(self, s):
         """
         Take a string and return a prefixed string and the new string size
         :param s: string to have a prefix added
-        :return: (size, prefixed string)
+        :return: (size of prefix, prefixed string)
         """
-        if self._line_number:
-            p = LineNumbers.prefix(self._line_number)
-            x = f"{p}{s}"
-            return len(p), x
+        p = LineNumbers.prefix(self._line_number)
+        return len(p), f"{p}{s}"
 
-        else:
-            return 0, s
+    def inc_line_number(self,s):
+        len_p, s = self.add_line_number(s)
+        self._line_number = self._line_number + 1
+        return len_p, s
 
 
 class Pager:
@@ -94,7 +95,8 @@ class Pager:
         self._paginate = paginate
         self._output_filename = output_filename
         self._output_file = None
-        self._line_numbers = line_numbers
+        self._line_numbers = True
+        self._line_count = LineNumbers()
         self._paginate_prompt = paginate_prompt
         self._pretty_print = pretty_print
 
@@ -107,9 +109,11 @@ class Pager:
     def line_numbers(self, state):
         self._line_numbers = state
 
-    @staticmethod
-    def prefix(number):
-        return LineNumbers.prefix(number)
+    def prefix(self, number):
+        if self._line_numbers:
+            return LineNumbers.prefix(number)
+        else:
+            return 0
 
     @property
     def output_file(self):
@@ -157,6 +161,57 @@ class Pager:
         else:
             raise FileNotOpenError()
 
+    @staticmethod
+    def make_numbers_column(line_number):
+        """
+        make a column of numbers all of the same width. The width is determined
+        by the largest number + 1 space + 1 colon.
+        :param line_number: The line number to start counting at
+        :return: an array of strings line_number .. screen height.
+        """
+        terminal_columns, terminal_lines = shutil.get_terminal_size(fallback=(80, 24))
+        terminal_lines = terminal_lines -1 # prompt line to continue
+        original_lines = []
+        padded_lines = []
+        prefix_width = 4
+        max_prefix_width = 0
+        for i in range(terminal_lines):
+            s = str(line_number)
+            original_lines.append(s)
+            prefix_width = len(s) + 1 # space and ':'
+            if prefix_width > max_prefix_width:
+                max_prefix_width = prefix_width
+            line_number = line_number + 1
+        for i in original_lines:
+            spaces = " " * (max_prefix_width - len(i))
+            padded_lines.append(f"{i}{spaces}:")
+
+        return line_number, padded_lines
+
+    def line_to_box(self, line: str, width: int = 80) -> list:
+        """
+        Take a line and split into separate lines at width boundaries
+        also if self.line_numbers > 0 then add the defined line number prefix
+        to each line.
+
+        :param line: A string of input
+        :param width: the size of the terminal in columns
+        :param line_number: Start incrementing line numbers from this number.
+        :return: A list of strings split at width boundaries from line
+        """
+        lines: list = []
+
+        while len(line) > width:
+            line_number = line_number + 1
+            segment: str = line[0:width]
+            lines.append(segment)
+            line: str = line[width:]
+
+        if len(line) > 0:
+            lines.append(line)
+
+        return lines
+
     def line_to_paragraph(self, line: str, width: int = 80, line_number: int = 0) -> list:
         """
         Take a line and split into separate lines at width boundaries
@@ -170,28 +225,30 @@ class Pager:
         """
         lines: list = []
         prefix = self.prefix(line_number)
-        prefix_size = len(prefix)
 
-        while prefix_size + len(line) > width:
-
-            if prefix_size < width:
+        while len(prefix) + len(line) > width:
+            line_number = line_number + 1
+            if len(prefix) < width:
                 segment: str = prefix + line[0:width - prefix_size]
                 lines.append(segment)
                 line: str = line[width - prefix_size:]
-
-                if line_number:
-                    line_number = line_number + 1
-                    prefix = self.prefix(line_number)
-                    prefix_size = len(prefix)
+                prefix = self.prefix(line_number)
             else:
                 segment: str = self.prefix(line_number)[0:width]
                 lines.append(segment)
                 line: str = ""
 
         if len(line) > 0:
+            line_number = line_number + 1
             lines.append(self.prefix(line_number) + line)
 
         return lines
+
+
+    # if self._paginate:
+    #         user_input = input()
+    #         if user_input.lower().strip() in ["q", "quit", "exit"]:
+    #             raise QuitPaginateException
 
     def paginate_lines(self, lines: list,
                        default_terminal_lines: int = None,
@@ -229,10 +286,8 @@ class Pager:
             output_lines = []
             prompt_lines = []
             overflow_lines = []
-            if self._line_numbers:
-                line_number = 1
-            else:
-                line_number = 0
+            line_number = 1
+            line_number_strs = None
 
             for l in lines:
                 # a line can be less than terminal width  - line number width. Just output it.
@@ -244,6 +299,9 @@ class Pager:
 
                 if self._paginate:
                     terminal_columns, terminal_lines = shutil.get_terminal_size(fallback=(80, 24))
+                    baseline_number = line_number
+                    line_number, line_number_strs = Pager.make_numbers_column(baseline_number)
+                    line_number_width = len(line_number_strs[-1:])
                     if default_terminal_cols:
                         terminal_columns = default_terminal_cols
                     if default_terminal_lines:
@@ -260,18 +318,20 @@ class Pager:
                     # We calculate the prompt size first so we know how many lines are left from
                     # program output. Probably not a good idea to make your prompt longer than
                     # 80 columns.
-                    prompt_lines = self.line_to_paragraph(self._paginate_prompt,
-                                                          terminal_columns)  # No line numbers
+                    prompt_lines = self.line_to_box(self._paginate_prompt,
+                                                    terminal_columns - line_number_width)
 
-                    multi_line = overflow_lines + self.line_to_paragraph(l, terminal_columns, line_number)
+                    multi_line = overflow_lines + self.line_to_box(l, terminal_columns - line_number_width)
                     overflow_lines = []
                     # print(f"{multi_line}")
-                    line_number = line_number + len(multi_line)
+                    #line_number = line_number + len(multi_line)
                     buffer_length = len(output_lines) + len(multi_line)
                     terminal_lines = terminal_lines - len(prompt_lines)  # leave room to output prompt
 
                     if buffer_length < terminal_lines:
                         output_lines.extend(multi_line)
+                        line_number = baseline_number # We are still building the screen so we need to calculate from 0.
+                        line_number_strs = []
                         continue
                     if buffer_length == terminal_lines:
                         output_lines.extend(multi_line)
@@ -280,8 +340,8 @@ class Pager:
                         output_lines.extend(multi_line[0:overflow])
                         overflow_lines = multi_line[overflow:]
 
-                    for data in output_lines:
-                        print(f"{data}")
+                    for line_no, s in zip(line_number_strs, output_lines):
+                        print(f"{line_no}{s}")
 
                     #
                     # Output potentially multi-line prompt string.
@@ -331,9 +391,11 @@ class Pager:
             for l in str(d).splitlines():
                 yield l
 
-    def list_to_line(self, l):
+
+    @staticmethod
+    def list_to_line(l):
         open_bracket = "["
-        close_bracket = "["
+        close_bracket = "]"
         for i, elem in enumerate(l):
             if i == 0:
                 elem = open_bracket + elem

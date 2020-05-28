@@ -72,17 +72,17 @@ def args_to_string(*args, **kwargs):
         return ""
 
 
-def error_func(error):
-    def director(func):
-        def inner_error(*args, **kwargs):
-            print(f"Error func: {func.__name__} {error}")
-            if args:
-                print(f"{args}")
-            if kwargs:
-                print(f"{kwargs}")
-        return inner_error
-
-    return director
+# def error_func(error):
+#     def director(func):
+#         def inner_error(*args, **kwargs):
+#             print(f"Error func: {func.__name__} {error}")
+#             if args:
+#                 print(f"{args}")
+#             if kwargs:
+#                 print(f"{kwargs}")
+#         return inner_error
+#
+#     return director
 
 
 def handle_exceptions(arg):
