@@ -18,7 +18,7 @@ URL = 'https://github.com/jdrumgoole/pymongoshell'
 EMAIL = 'joe@joedrumgoole.com'
 AUTHOR = 'Joe Drumgoole'
 REQUIRES_PYTHON = '>=3.6.0'
-VERSION = "1.1.0b7"
+VERSION = "1.1.0b9"
 
 # What packages are required for this module to be executed?
 REQUIRED = [
@@ -166,4 +166,6 @@ setup(
         'upload': UploadCommand,
         'testupload': TestUploadCommand
     },
+    test_suite='nose.collector',
+    tests_require=['nose'],
 )

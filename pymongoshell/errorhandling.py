@@ -95,7 +95,7 @@ def handle_exceptions(arg):
             function_wrapper.__name__ = func.__name__
             #source = ""
             try:
-                print(f"arg_string:{arg_string}")
+                #print(f"arg_string:{arg_string}")
                 return func(*args, **kwargs)
             except AttributeError as e:
                 print_to_err(f"CLI AttributeError: {func.__name__} is not a valid operation")

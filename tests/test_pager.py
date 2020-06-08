@@ -33,23 +33,30 @@ def find(fn: str, s: str):
 
 class TestPager(unittest.TestCase):
 
+    def test_LineNumber(self):
+        x = LineNumbers()
+        self.assertEqual(str(x), "")
+        x = LineNumbers(1)
+        self.assertEqual(str(x), "1  : ")
+        #print(f"'{LineNumbers(1).prefix()}'")
+
     def test_pager(self):
         pager = Pager(line_numbers=True)
         lines = pager.line_to_paragraph("aaa", line_number=1)
         self.assertEqual(len(lines), 1)
-        self.assertEqual(lines[0], LineNumbers.prefix(1) + "aaa")
+        self.assertEqual(lines[0], LineNumbers(1).prefix() + "aaa")
         lines = pager.line_to_paragraph("")
         self.assertEqual(len(lines), 0)
 
         lines = pager.line_to_paragraph("12345abcde12345", width=5, line_number=1)
         self.assertEqual(len(lines), 1)
-        self.assertEqual(lines[0], LineNumbers.prefix(1))
+        self.assertEqual(lines[0], LineNumbers(1).prefix())
 
         lines = pager.line_to_paragraph("12345abcde12345", 10, line_number=1)
         self.assertEqual(len(lines), 3)
-        self.assertEqual(lines[0], LineNumbers.prefix(1) + "12345")
-        self.assertEqual(lines[1], LineNumbers.prefix(2) + "abcde")
-        self.assertEqual(lines[2], LineNumbers.prefix(3) + "12345")
+        self.assertEqual(lines[0], LineNumbers(1).prefix() + "12345")
+        self.assertEqual(lines[1], LineNumbers(2).prefix() + "abcde")
+        self.assertEqual(lines[2], LineNumbers(3).prefix() + "12345")
 
     def test_file(self):
         pager = Pager()
@@ -75,15 +82,16 @@ class TestPager(unittest.TestCase):
         with captured_output() as (out, err):
             pager.paginate_lines(lines_in, default_terminal_cols=20, default_terminal_lines=24)
 
-        # print("out.getvalue()")
+        # # print("out.getvalue()")
         # print(f"{out.getvalue().splitlines()}")
-
-        test_output = "1  : 12345678901234\n" \
-                      "2  : 567890\n" \
-                      "3  : 12345678901234\n" \
-                      "4  : 567890\n" \
-                      "5  : 12345678901234\n" \
-                      "6  : 567890\n"
+        lines = out.getvalue().splitlines()
+        self.assertEqual(len(lines[0]), 20)
+        test_output = "1  : 123456789012345\n" \
+                      "2  : 67890\n" \
+                      "3  : 123456789012345\n" \
+                      "4  : 67890\n" \
+                      "5  : 123456789012345\n" \
+                      "6  : 67890\n"
 
         # print("test_output")
         # print(f"{test_output.splitlines()}")

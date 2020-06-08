@@ -323,7 +323,7 @@ class MongoClient:
             return f"{self._database_name}.{self._collection_name}"
 
     @collection.setter
-    #@handle_exceptions("collection.setter")
+    @handle_exceptions("collection.setter")
     def collection(self, db_collection_name):
         """
         Set the default collection for the database associated with the `MongoDB`
@@ -596,23 +596,24 @@ class MongoClient:
             print(result)
 
     def interceptor(self, func):
-        #@handle_exceptions(col_op.__name__)
+        @handle_exceptions(func.__name__)
         def inner_func(*args, **kwargs):
             inner_func.__name__ = func.__name__
-            #print(f"{func.__name__}({args}, {kwargs})")
+            # print(f"{func.__name__}({args}, {kwargs})")
             result = func(*args, **kwargs)
             self.process_result(result)
         inner_func.__name__ = func.__name__
-        #print(f"inner_func.__name__ : {inner_func.__name__}")
+        # print(f"inner_func.__name__ : {inner_func.__name__}")
         return inner_func
+
 
     def __getattr__(self, item):
         if self._collection is None:
             return self._set_collection(item)
         else:
             db_name, col_name = self.parse_full_name(item)
-            #print(f"item:{item}")
-            #print(f"col_name:{col_name}")
+            # print(f"item:{item}")
+            # print(f"col_name:{col_name}")
             func = self.has_attr(self._collection, col_name)
             if callable(func):
                 return self.interceptor(func)

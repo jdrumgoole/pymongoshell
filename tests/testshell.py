@@ -49,7 +49,7 @@ class TestShell(unittest.TestCase):
 
     def test_find_one(self):
         with captured_output() as (out, err):
-            c = MongoClient(banner = False,host="mongodb+srv://readonly:readonly@demodata.rgl39.mongodb.net/test?retryWrites=true&w=majority")
+            c = MongoClient(banner=False, host="mongodb+srv://readonly:readonly@demodata.rgl39.mongodb.net/test?retryWrites=true&w=majority")
             c.collection = "demo.zipcodes"
 
         self.assertTrue("zipcodes" in c.database.list_collection_names())
@@ -57,21 +57,22 @@ class TestShell(unittest.TestCase):
             c.line_numbers = False
             c.find_one()
 
-        self.assertTrue('AGAWAM' in out.getvalue())
+        self.assertTrue('PALMER' in out.getvalue())
         self.assertEqual("", err.getvalue())
 
     def test_find(self):
         with captured_output() as (out, err):
-            c = MongoClient(banner = False,host="mongodb+srv://readonly:readonly@demodata.rgl39.mongodb.net/test?retryWrites=true&w=majority")
+            c = MongoClient(banner=False, host="mongodb+srv://readonly:readonly@demodata.rgl39.mongodb.net/test?retryWrites=true&w=majority")
             c.collection = "demo.zipcodes"
             c.pretty_print = False
             c.paginate = False
             c.line_numbers = False
             c.find(limit=50)
 
-        print(out.getvalue())
+        #print(out.getvalue())
         self.assertEqual(len(out.getvalue().splitlines()), 51) # error line
-        self.assertTrue('01105' in out.getvalue())
+        self.assertTrue('01069' in out.getvalue())
+        self.assertTrue('01970' in out.getvalue())
         self.assertEqual("", err.getvalue())
 
     def test_insert_one(self):
@@ -138,7 +139,8 @@ class TestShell(unittest.TestCase):
 
     def test_database_collection_assign(self):
         client = MongoClient(banner=False)
-        client.collection = "test.jdrumgoole"
+        with captured_output() as (out, err):
+            client.collection = "test.jdrumgoole"
         self.assertEqual(client.collection_name, "test.jdrumgoole")
         self.assertEqual(client.database_name, "test")
         client.drop_collection(confirm=False)
@@ -152,7 +154,7 @@ class TestShell(unittest.TestCase):
     def test_exceptions(self):
         with captured_output() as (out, err):
             self._c.collection = "new$db.jdrumgoole"
-        self.assertTrue( "MongoDBShellError: 'new$db' is not a valid database name" in err.getvalue(), err.getvalue())
+        self.assertTrue("MongoDBShellError: 'new$db' is not a valid database name" in err.getvalue(), err.getvalue())
         with captured_output() as (out, err):
             self._c.collection = "newdb.jdr$umgoole"
         self.assertTrue( "MongoDBShellError: 'jdr$umgoole' is not a valid collection name" in err.getvalue(), err.getvalue())
@@ -164,5 +166,13 @@ class TestShell(unittest.TestCase):
             c.collection="covid19.statistics"
         self.assertEqual(c.database_name, "covid19")
         self.assertEqual(c.collection_name, "covid19.statistics")
+
+    def test_output(self):
+        with captured_output() as (out, err):
+            c = MongoClient(banner=False, host="mongodb+srv://readonly:readonly@demodata.rgl39.mongodb.net/test?retryWrites=true&w=majority")
+            c.collection = "demo.zipcodes"
+            c.output_file = "test_output.txt"
+            c.paginate=False
+            c.find(limit=10)
 if __name__ == '__main__':
     unittest.main()
