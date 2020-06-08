@@ -18,7 +18,7 @@ URL = 'https://github.com/jdrumgoole/pymongoshell'
 EMAIL = 'joe@joedrumgoole.com'
 AUTHOR = 'Joe Drumgoole'
 REQUIRES_PYTHON = '>=3.6.0'
-VERSION = "1.1.0b9"
+VERSION = "1.2.1b1"
 
 # What packages are required for this module to be executed?
 REQUIRED = [

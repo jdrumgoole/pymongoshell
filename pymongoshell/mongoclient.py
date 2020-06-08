@@ -487,6 +487,7 @@ class MongoClient:
     @line_numbers.setter
     def line_numbers(self, state):
         self._pager.line_numbers = state
+        self._line_numbers = state
 
     @property
     def pretty_print(self):

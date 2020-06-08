@@ -75,6 +75,29 @@ class TestShell(unittest.TestCase):
         self.assertTrue('01970' in out.getvalue())
         self.assertEqual("", err.getvalue())
 
+    def test_line_numbers(self):
+        with captured_output() as (out, err):
+            c = MongoClient(banner=False, host="mongodb+srv://readonly:readonly@demodata.rgl39.mongodb.net/test?retryWrites=true&w=majority")
+            c.collection = "demo.zipcodes"
+            c.pretty_print = False
+            c.paginate = False
+            c.line_numbers = False
+            c.find(limit=2)
+
+        for i in out.getvalue().splitlines()[1:]:
+            # print(i)
+            self.assertTrue(i.startswith("{"))
+
+        with captured_output() as (out, err):
+            c.line_numbers = True
+            c.find(limit=2)
+
+        counter = 0
+        for i in out.getvalue().splitlines():
+            # print(i)
+            counter = counter + 1
+            self.assertTrue(i.startswith(str(counter)))
+
     def test_insert_one(self):
         with captured_output() as (out, err):
             now = datetime.utcnow()

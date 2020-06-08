@@ -372,25 +372,36 @@ class Pager:
                                                                                      default_terminal_lines)
                     prompt_lines = self.line_to_box(self._paginate_prompt,
                                                     terminal_columns)
-                    number_prefix_width = len(Pager.indented_number(line_number + terminal_lines))
+                    if self.line_numbers:
+                        number_prefix_width = len(Pager.indented_number(line_number + terminal_lines))
+                    else:
+                        number_prefix_width = 0
 
                     output_lines, residual_lines = self.make_page(page_lines,
                                                               terminal_columns - number_prefix_width,
                                                               terminal_lines - len(prompt_lines))
+                    if self.line_numbers:
+                        line_number_column = Pager.make_numbers_column(line_number,
+                                                                       default_terminal_cols,
+                                                                       default_terminal_lines)
 
-                    line_number_column = Pager.make_numbers_column(line_number,
-                                                                   default_terminal_cols,
-                                                                   default_terminal_lines)
-
-                    for number, line in zip(line_number_column, output_lines):
-                        print(f"{number}{line}")
-                        line_number = line_number + 1
+                        for number, line in zip(line_number_column, output_lines):
+                            print(f"{number}{line}")
+                            line_number = line_number + 1
+                    else:
+                        for line in output_lines:
+                            print(f"{line}")
+                            line_number = line_number + 1
 
                     if len(output_lines) == (terminal_lines - len(prompt_lines)):
                         Pager.input_prompt(prompt_lines)
                 else:
                     for l in page_lines:
-                        print(l)
+                        if self.line_numbers:
+                            print(f"{line_number} : {l}")
+                            line_number = line_number + 1
+                        else:
+                            print(l)
                         if self.output_file:
                             self._output_file.write(f"{l}\n")
         except QuitPaginateException:
