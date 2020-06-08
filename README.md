@@ -16,7 +16,7 @@ package are:
  
 The shell is actually a shim class that wraps the 
 [`pymongo.Collection`](https://api.mongodb.com/python/current/api/pymongo/collection.html) class. The
-class `mongodbshell` intercepts method and property requests and forwards
+class `pymongoshell` intercepts method and property requests and forwards
 them to that class. 
 
 We then process the return values using the properties:
@@ -29,7 +29,7 @@ a human viewer.
 
 ## Installation
 
-you can install the software with `pip3`. The `mongodbshell` only
+you can install the software with `pip3`. The `pymongoshell` only
 supports Python 3. 
 
 ```shell script
@@ -39,7 +39,7 @@ $ pip3 install pymongoshell
 ## Using the pymongoshell
 
 First we create a `MongoClient` object. This is a proxy for all the 
-commands we can run using `MongoDBShell`. It is exactly analogous to 
+commands we can run using `pymongoshell`. It is exactly analogous to 
 the PyMongo `MongoClient` and is in fact just a shim. We support one
 additional argument `banner`. This argument controls whether we output a banner
 detailing which version and which collections 
