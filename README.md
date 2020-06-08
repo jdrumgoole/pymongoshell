@@ -163,14 +163,18 @@ can be toggled on and off by settting the flag.
 >>> c.line_numbers=False
 >>>
 ```
-#Convenience Functions
+# Convenience Functions
 
 The class provides a number of convenience functions to allow easy access
 to some of the more common administrative functions.
 
 ## lcols
 
+list the collections in the current database.
+
 ## ldbs
+
+List the databases on the current cluster.
 
 ## drop_database
 
@@ -195,10 +199,6 @@ Drop database: 'dummy' [y/Y]: y
 4  : local
 >>>
 ```
-
-## drop_collection
-
-
 
 ## is_master
 

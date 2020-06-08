@@ -361,6 +361,10 @@ class MongoClient:
         self._collection.rename(new_name, **kwargs)
         print(f"renamed collection '{db_name}.{old_name}' to '{db_name}.{new_name}'")
 
+    def command(self, cmd):
+        result = self._database.command(cmd)
+        self._pager.paginate_doc(result)
+
     def list_database_names(self):
         """
         List all the databases on the default server.
