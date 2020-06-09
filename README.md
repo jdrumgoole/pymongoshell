@@ -455,6 +455,11 @@ Output is also going to 'zipcodes.txt'
 Output will continue to be sent to the `output_file` until the output_file is assigned
 `None` or the empty string ("").
 
+## Result
+If you need the actual value returned by a query it is stored
+in the `result` property. Note that if the result is a cursor and
+you have paged through some of the result then the cursor value may
+at an indeterminate location. 
 
 
 

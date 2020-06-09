@@ -35,7 +35,7 @@ class ClassProxy:
                         result = invoker(*args, **kwargs)
                         if type(result) in [pymongo.command_cursor.CommandCursor, pymongo.cursor.Cursor]:
                             self.print_cursor(result)
-                        elif self._handle_result.is_type(result):
+                        elif self._handle_result.is_result_type(result):
                             self._handle_result.handle(result)
                         elif type(result) is dict:
                             self._pager.paginate_doc(result)

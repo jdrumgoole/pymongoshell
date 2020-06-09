@@ -28,7 +28,7 @@ class HandleResults:
     def __init__(self, pager: Pager):
         self._pager = Pager()
 
-    def is_type(self, result):
+    def is_result_type(self, result):
         return type(result) in [pymongo.results.InsertOneResult,
                                 pymongo.results.InsertManyResult,
                                 pymongo.results.UpdateResult,
@@ -166,6 +166,8 @@ class MongoClient:
 
         object.__setattr__(self, "_collection", None)
         object.__setattr__(self, "_database", None)
+
+        object.__setattr__(self, "_result", None)
 
         if self._database_name:
             object.__setattr__(self, "_database", self._client[self._database_name])
@@ -593,12 +595,20 @@ class MongoClient:
             print("None")
         elif type(result) in [pymongo.command_cursor.CommandCursor, pymongo.cursor.Cursor]:
             self._pager.print_cursor(result)
-        elif self._handle_result.is_type(result):
+        elif self._handle_result.is_result_type(result):
             self._handle_result.handle(result)
         elif type(result) is dict:
             self._pager.paginate_doc(result)
+        # elif type(result) is list:
+        #     self._pager.paginate_list(result)
         else:
             print(result)
+
+        self._result = result
+
+    @property
+    def result(self):
+        return self._result
 
     def interceptor(self, func):
         @handle_exceptions(func.__name__)

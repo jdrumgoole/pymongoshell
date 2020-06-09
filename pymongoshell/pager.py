@@ -323,7 +323,7 @@ class Pager:
             chunk.append(l)
             if len(chunk) == chunk_size:
                 yield chunk
-                chunk=[]
+                chunk = []
         if chunk:
             yield chunk
 
@@ -378,8 +378,8 @@ class Pager:
                         number_prefix_width = 0
 
                     output_lines, residual_lines = self.make_page(page_lines,
-                                                              terminal_columns - number_prefix_width,
-                                                              terminal_lines - len(prompt_lines))
+                                                                  terminal_columns - number_prefix_width,
+                                                                  terminal_lines - len(prompt_lines))
                     if self.line_numbers:
                         line_number_column = Pager.make_numbers_column(line_number,
                                                                        default_terminal_cols,
@@ -431,15 +431,18 @@ class Pager:
                 yield l
 
     @staticmethod
-    def list_to_line(l):
+    def list_to_line(l: list):
         open_bracket = "["
         close_bracket = "]"
         for i, elem in enumerate(l):
             if i == 0:
-                elem = open_bracket + elem
+                elem = f"{open_bracket}{elem},"
             if i == (len(l) - 1):
-                elem = elem + close_bracket
-            yield elem
+                elem = f"{elem}{close_bracket}"
+            yield f"{elem},"
+
+    def paginate_list(self, l):
+        return self.paginate_lines(Pager.list_to_lines(l))
 
     def paginate_doc(self, doc):
         return self.paginate_lines(self.dict_to_lines(doc))
