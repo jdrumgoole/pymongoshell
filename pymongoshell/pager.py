@@ -431,7 +431,7 @@ class Pager:
                 yield l
 
     @staticmethod
-    def list_to_line(l: list):
+    def list_to_line_gen(l: list):
         open_bracket = "["
         close_bracket = "]"
         for i, elem in enumerate(l):
@@ -440,6 +440,23 @@ class Pager:
             if i == (len(l) - 1):
                 elem = f"{elem}{close_bracket}"
             yield f"{elem},"
+
+    @staticmethod
+    def list_to_lines(l: list):
+        open_bracket = "["
+        close_bracket = "]"
+        result = []
+        for i, elem in enumerate(l):
+            if i == 0:
+                result.append(f"{open_bracket}{elem},")
+            elif i == (len(l) - 1):
+                result.append(f"{elem}{close_bracket}")
+            else:
+                result.append(f"{elem},")
+        if len(result) == 0:
+            return [str(result)]
+        else:
+            return result
 
     def paginate_list(self, l):
         return self.paginate_lines(Pager.list_to_lines(l))

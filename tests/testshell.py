@@ -197,5 +197,18 @@ class TestShell(unittest.TestCase):
             c.output_file = "test_output.txt"
             c.paginate=False
             c.find(limit=10)
+
+    def test_distinct(self):
+        with captured_output() as (out, err):
+            c = MongoClient(banner=False,
+                            host="mongodb+srv://readonly:readonly@demodata.rgl39.mongodb.net/test?retryWrites=true&w=majority")
+            c.collection = "demo.zipcodes"
+            c.paginate = False
+            c.distinct("city")
+        self.assertEqual(16584, len(c.result))
+        self.assertEqual(c.result[0], "AARON")
+        self.assertEqual(c.result[-1], "ZWOLLE")
+
+
 if __name__ == '__main__':
     unittest.main()

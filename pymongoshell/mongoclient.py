@@ -599,8 +599,8 @@ class MongoClient:
             self._handle_result.handle(result)
         elif type(result) is dict:
             self._pager.paginate_doc(result)
-        # elif type(result) is list:
-        #     self._pager.paginate_list(result)
+        elif type(result) is list:
+            self._pager.paginate_list(result)
         else:
             print(result)
 

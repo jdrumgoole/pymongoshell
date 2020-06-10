@@ -101,7 +101,12 @@ class TestPager(unittest.TestCase):
 
     def test_list_to_line(self):
         pager = Pager()
-        l = pager.list_to_line([1, 2, 3, 4])
+        test_list = [1, 2, 3, 4]
+        l = Pager.list_to_lines([1, 2, 3, 4])
+        self.assertEqual(len(l), len(test_list))
+        self.assertEqual("[1,", l[0])
+        self.assertEqual("4]", l[3])
+
 
 
 if __name__ == '__main__':
