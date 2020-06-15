@@ -6,12 +6,13 @@ friendly API calls.
 
 """
 
-# import pprint
-import pymongo
-import pymongo.uri_parser
-
 import pprint
 import sys
+from functools import wraps
+# import pprint
+
+import pymongo
+
 from pymongoshell.pager import Pager, FileNotOpenError
 from pymongoshell.version import VERSION
 
@@ -352,7 +353,6 @@ class MongoClient:
         filter_arg = filter or {}
         return self.collection.count_documents(filter=filter_arg, *args, *kwargs)
 
-
     def rename(self, new_name, **kwargs):
         if not self.valid_mongodb_name(new_name):
             print(f"{new_name} cannot be used as a collection name")
@@ -432,6 +432,10 @@ class MongoClient:
         Shorthand for list_database_names()
         """
         self.list_database_names()
+
+    @property
+    def version(self):
+        return f"{self.__module__.__name__}1.2.1b5"
 
     @staticmethod
     def confirm_yes(message):
@@ -611,16 +615,17 @@ class MongoClient:
         return self._result
 
     def interceptor(self, func):
+        assert callable(func)
+
         @handle_exceptions(func.__name__)
+        @wraps(func)
         def inner_func(*args, **kwargs):
-            inner_func.__name__ = func.__name__
             # print(f"{func.__name__}({args}, {kwargs})")
             result = func(*args, **kwargs)
             self.process_result(result)
-        inner_func.__name__ = func.__name__
+
         # print(f"inner_func.__name__ : {inner_func.__name__}")
         return inner_func
-
 
     def __getattr__(self, item):
         if self._collection is None:
@@ -635,78 +640,6 @@ class MongoClient:
             else:
                 self._collection = self._set_collection(item)
                 return self
-
-    # #@handle_exceptions("__get_attr__")
-    # def __getattr__(self, name, *args, **kwargs):
-    #     '''
-    #     Call __getattr__ if we specify members that don't exist. The
-    #     goal here is to pass any function not directly implemented
-    #     by this class straight up to pymongo.Collection.
-    #
-    #     Here we intercept the function lookup invoked of the
-    #     pymongoshell.MongoClient object and use it to invoke the
-    #     pymongo.Collection class directly. The nested inner function
-    #     is required to capture the parameters correctly.
-    #
-    #     :param name: the method or property that doesn't exist.
-    #     :param args: args passed in by invoker
-    #     :param kwargs: kwargs passed in by invoker
-    #     :return: Results of call target method
-    #     '''
-    #
-    #     if self._collection is None:
-    #         raise CollectionNotSetError
-    #     col_op = MongoClient.has_attr(self._collection, name)
-    #     print(f"has_attr result: {col_op}")
-    #     if col_op is None:
-    #         if self.valid_mongodb_name(name):
-    #             self._collection = self.collection.__getattr__(name)
-    #             self._collection_name = name
-    #             print(f"Setting default database and collection to: {self.collection_name}")
-    #         else:
-    #             return MongoClient.error(f"'{name}' is not a valid argument")
-    #     else:
-    #         def make_invoker(invoker):
-    #             if callable(invoker):
-    #                 #@handle_exceptions(col_op.__name__)
-    #                 def inner_func(*args, **kwargs):
-    #                     inner_func.__name__ = invoker.__name__
-    #                     print(f"{invoker.__name__}({args}, {kwargs})")
-    #                     result = invoker(*args, **kwargs)
-    #                     if type(result) in [pymongo.command_cursor.CommandCursor, pymongo.cursor.Cursor]:
-    #                         self._pager.print_cursor(result)
-    #                     elif self._handle_result.is_type(result):
-    #                         self._handle_result.handle(result)
-    #                     elif type(result) is dict:
-    #                         self._pager.paginate_doc(result)
-    #
-    #                     else:
-    #                         # (f"type result: {type(result)}")
-    #                         # print(f"result: {result}")
-    #                         return result
-    #
-    #                 inner_func.__name__ = invoker.__name__
-    #                 print(f"inner_func.__name__ : {inner_func.__name__}")
-    #                 return inner_func
-    #             else:
-    #                 return invoker
-    #
-    #         # print(f"make_invoker.__name__ : {make_invoker.__name__}")
-    #         return make_invoker(col_op)
-
-    # def __setattr__(self, name, value):
-    #     '''
-    #     We override __setattr__ to allow us to assign objects that already
-    #     exist. This stops someone creating arbitrary class members. We only
-    #     users to reference existing fields for the purposes of assignment.
-    #     :param name:
-    #     :param value:
-    #     :return:
-    #     '''
-    #     if hasattr(self, name):
-    #         object.__setattr__(self, name, value)
-    #     else:
-    #         print("Cannot set name '{name}'on object of type '{self.__class__.__name__}'")
 
     def __del__(self):
         self._pager.close()
@@ -787,4 +720,3 @@ if __name__ == "__main__":
     c.ldbs
     c.drop_database(confirm=False)
     c.ldbs
-
