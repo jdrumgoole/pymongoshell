@@ -13,7 +13,11 @@ To use::
     >>> import pymongoshell
     >>> client = pymongoshell.MongoClient() # assumes a local mongod running on port 27017
     >>> client
-    mongodbshell.MongoDB('test', 'test', 'mongodb://localhost:27017')
+    pymongoshell.MongoClient(banner=True,
+                            database_name='test',
+                            collection_name='find_one',
+                            host= 'mongodb://localhost:27017')
+    >>>
     >>> client.insert_one({"msg" : "MongoDBShell is great"})
     ObjectId('5cb30cfa72a4ae3b105afa1c')
     >>> client.find_one()
